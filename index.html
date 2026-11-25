@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>結構事務所（原型）</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#e9e4d8;color:#1f2733;font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;font-size:15px;line-height:1.45;overscroll-behavior:none}
+body{display:flex;justify-content:center}
+#app{width:100%;max-width:600px;height:100vh;height:100dvh;background:#f7f4ec;position:relative;overflow:hidden;box-shadow:0 0 40px rgba(60,50,20,.12)}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+[hidden]{display:none!important}
+.ghost{padding:8px 12px;border-radius:10px;background:#ece7da;color:#3d4756;font-size:13px;font-weight:600;min-height:38px}
+.ghost:active{background:#dfd8c6}
+.primary{background:#2b6de0;color:#fff;font-weight:700;border-radius:12px;padding:12px 18px;font-size:16px;box-shadow:0 3px 0 #1b4fb0;min-height:46px}
+.primary:active{transform:translateY(2px);box-shadow:0 1px 0 #1b4fb0}
+
+/* 首頁 */
+#home{height:100%;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#2f3b4c;color:#fff}
+.brand{display:flex;flex-direction:column;line-height:1.15;margin-right:auto}
+.brand b{font-size:18px;letter-spacing:.06em}.brand span{font-size:11px;opacity:.7}
+.wallet{display:flex;flex-direction:column;align-items:flex-end;font-size:12px;line-height:1.3;opacity:.95}
+.wallet b{color:#f4d35e;font-size:13px}
+.top .ghost{background:rgba(255,255,255,.14);color:#fff;font-size:12px;padding:6px 10px;min-height:32px}
+.homeBody{flex:1;overflow-y:auto;padding:12px 12px 24px;-webkit-overflow-scrolling:touch}
+.mode{background:#fff;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 1px 0 #e3dccb}
+.modeHead{display:flex;align-items:baseline;gap:8px}
+.mode h2{margin:0;font-size:19px}.modeHead span{font-size:12px;color:#7a8696}
+.mode p{margin:4px 0 10px;font-size:13px;color:#4b5666}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.lvbtn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 4px 7px;border-radius:12px;background:#f1ede2;border:1.5px solid #e2dccb;min-height:76px}
+.lvbtn .num{font-size:20px;font-weight:800;color:#2f3b4c;line-height:1}
+.lvbtn .nm{font-size:11.5px;color:#4b5666;white-space:nowrap}
+.lvbtn .st i{font-style:normal;font-size:13px;color:#d6cfbc}.lvbtn .st i.on{color:#f2b01e}
+.lvbtn.done{background:#eef6ef;border-color:#cfe6d3}
+.lvbtn.locked{opacity:.42}
+.lvbtn:not(.locked):active{transform:scale(.97)}
+.foot{font-size:11.5px;color:#8a8472;text-align:center;margin:6px 0 0}
+
+/* 關卡 */
+#level{height:100%;display:flex;flex-direction:column}
+.lvtop{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#2f3b4c;color:#fff}
+.lvtop .ghost{background:rgba(255,255,255,.14);color:#fff;min-width:40px}
+#back{font-size:22px;line-height:1;padding:4px 12px}
+.lvname{flex:1;display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.lvname small{font-size:11px;opacity:.7}.lvname b{font-size:16px}
+.brief{padding:8px 12px 6px;background:#fff;border-bottom:1px solid #e9e2d2}
+.brief .who{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:#8a6a3c;border-radius:6px;padding:1px 7px;margin-bottom:3px}
+.brief p{margin:0;font-size:13.5px}
+.brief .tip{font-size:12px;color:#6a7484;margin-top:3px;padding-left:8px;border-left:3px solid #f4d35e}
+.stage{flex:1;min-height:150px;position:relative;background:#f3f8fd}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+#scene text{font-family:inherit;user-select:none}
+#hit{position:absolute;inset:0;touch-action:none}
+#toast{position:absolute;left:10px;right:10px;bottom:8px;background:rgba(31,39,51,.93);color:#fff;font-size:13px;padding:9px 12px;border-radius:10px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none}
+#toast.on{opacity:1;transform:none}
+.ledger{display:flex;flex-wrap:wrap;gap:2px 12px;padding:6px 12px;font-size:12px;color:#5b6676;background:#fbf9f3;border-top:1px solid #e9e2d2}
+.ledger b{color:#1f2733}.ledger .pf{margin-left:auto;font-size:13px}.ledger .pf b{color:#1f7a50;font-size:15px}
+.tray{padding:8px 10px 4px;background:#fbf9f3;user-select:none;-webkit-user-select:none}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px}
+.card{position:relative;background:#fff;border:1.5px solid #e2dccb;border-radius:12px;padding:4px 4px 5px;display:flex;flex-direction:column;align-items:center;text-align:center;touch-action:none;cursor:grab;line-height:1.2;box-shadow:0 2px 0 #e2dccb}
+.card svg{width:36px;height:26px}
+.card b{font-size:12px}.card i{font-style:normal;font-size:10.5px;color:#5b6676}
+.card em{font-style:normal;font-size:11px;font-weight:700;color:#8a6a3c}
+.card .cnt{position:absolute;top:3px;right:5px;font-size:10.5px;font-weight:700;color:#2b6de0}
+.card.out{opacity:.38}
+.card.tog{cursor:pointer;touch-action:manipulation}.card.sel{border-color:#2b6de0;background:#eaf1fd;box-shadow:0 2px 0 #2b6de0}
+.ctlrow{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.stepper{display:flex;align-items:center;gap:4px;background:#fff;border:1.5px solid #e2dccb;border-radius:12px;padding:3px 4px 3px 9px;flex:1 1 150px;min-height:44px}
+.stepper .lab{font-size:12px;color:#5b6676;white-space:nowrap}
+.stepper .val{flex:1;text-align:center;font-weight:700;font-size:13.5px;line-height:1.15;white-space:nowrap}
+.stepper .val small{display:block;font-size:10.5px;color:#8a6a3c;font-weight:700}
+.stepper button{width:36px;height:36px;border-radius:9px;background:#ece7da;font-size:19px;font-weight:700;line-height:1}
+.stepper button:active{background:#d9d1bd}
+.forms{display:flex;gap:6px;margin-bottom:6px}
+.form{flex:1;background:#fff;border:1.5px solid #e2dccb;border-radius:12px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;min-height:52px}
+.form svg{width:36px;height:26px}.form b{font-size:12px}
+.form.sel{border-color:#2b6de0;background:#eaf1fd;box-shadow:0 2px 0 #2b6de0}
+.note{font-size:12px;color:#5b6676;padding:4px 2px}
+.est{font-size:12.5px;color:#5b6676;text-align:right;padding:0 4px}.est b{font-size:15px;color:#8a6a3c}
+.actions{display:flex;gap:8px;padding:6px 10px 12px;background:#fbf9f3}
+.actions .primary{flex:1}
+#ghost{position:fixed;display:none;transform:translate(-50%,-50%);background:#2e9e6b;color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;pointer-events:none;z-index:9;box-shadow:0 4px 10px rgba(0,0,0,.25);white-space:nowrap}
+
+/* 結果 */
+#sheet{position:absolute;left:0;right:0;bottom:0;z-index:8;transform:translateY(105%);transition:transform .26s cubic-bezier(.2,.8,.2,1);max-height:78%;overflow-y:auto}
+#sheet.on{transform:none}
+.sheet{background:#fff;border-radius:18px 18px 0 0;padding:14px 16px 16px;box-shadow:0 -8px 30px rgba(30,30,20,.22)}
+.sheet h3{margin:0 0 6px;font-size:18px}
+.sheet p{margin:4px 0;font-size:14px}
+.sheet.fail h3{color:#c2333a}.sheet.fail b{color:#c2333a}
+.sheet .fee{font-size:12.5px;color:#8a6a3c;font-weight:700}
+.sheet.win h3{color:#1f7a50}
+.stars{font-size:38px;line-height:1;letter-spacing:6px;margin:2px 0 8px}
+.stars i{font-style:normal;color:#e5dfcf;display:inline-block;transition:transform .25s cubic-bezier(.3,1.8,.5,1),color .2s}
+.stars i.on{color:#f2b01e;transform:scale(1.18)}
+.sheet table{width:100%;border-collapse:collapse;font-size:13.5px}
+.sheet td{padding:2px 0}.sheet td:last-child{text-align:right;font-weight:700}
+.sheet tr.sum td{border-top:1.5px solid #e2dccb;padding-top:5px;font-size:15.5px;color:#1f7a50}
+.sheet .why{font-size:12.5px;color:#5b6676}
+.sheet details{font-size:12.5px;color:#3d4756;margin:6px 0}.sheet summary{color:#2b6de0;font-weight:600;padding:4px 0}
+.sheet ul{margin:4px 0 0;padding-left:18px}
+.btns{display:flex;gap:8px;margin-top:10px}.btns .primary{flex:1}.btns .ghost{flex:0 1 auto}
+@media (max-height:640px){.brief{padding:5px 12px 4px}.brief p{font-size:13px;line-height:1.35}.brief .tip{font-size:11.5px;margin-top:2px}.brief .who{margin-bottom:1px}
+  .card svg{height:20px}.card{padding:3px 4px 4px}.actions{padding:4px 10px 8px}.primary{min-height:42px;padding:9px 18px}
+  .stepper{min-height:40px;flex-basis:44%}.stepper button{width:32px;height:32px}.form{min-height:46px}.form svg{height:20px}.forms,.ctlrow{margin-bottom:4px}.tray{padding:6px 10px 2px}.ledger{padding:4px 12px}.lvtop{padding:6px 10px}}
+
+</style>
+</head>
+<body>
+<div id="app"><div id="home"></div><div id="level" hidden></div><div id="sheet"></div></div>
+<div id="ghost"></div>
+<script>
+// 結構事務所 規則引擎（瀏覽器與 node 共用）
+(function (root) {
+  'use strict';
+  const EPS = 1e-7;
+
+  // ---------- 通用靜力求解 ----------
+  function gauss(A, b) {
+    const n = A.length;
+    const M = A.map((r, i) => r.concat([b[i]]));
+    for (let c = 0; c < n; c++) {
+      let p = c;
+      for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      if (Math.abs(M[p][c]) < 1e-9) return null;
+      const t = M[c]; M[c] = M[p]; M[p] = t;
+      for (let r = 0; r < n; r++) {
+        if (r === c) continue;
+        const f = M[r][c] / M[c][c];
+        if (f) for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k];
+      }
+    }
+    return M.map((r, i) => r[n] / r[i]);
+  }
+
+  // B 個剛體；sup:[{b,x,y,t:'R'|'P'|'F'}] hin:[{a,b,x,y}] ties:[{a,xa,ya,b,xb,yb}] loads:[{b,x,y,fx,fy}]
+  function statics(B, sup, hin, ties, loads) {
+    const cols = [];
+    const T = (b, x, y, fx, fy, m) => ({ b, x, y, fx, fy, m: m || 0 });
+    sup.forEach((s, i) => {
+      if (s.t !== 'R') cols.push({ k: 'H', i, terms: [T(s.b, s.x, s.y, 1, 0)] });
+      cols.push({ k: 'V', i, terms: [T(s.b, s.x, s.y, 0, 1)] });
+      if (s.t === 'F') cols.push({ k: 'M', i, terms: [T(s.b, 0, 0, 0, 0, 1)] });
+    });
+    hin.forEach((h, i) => {
+      cols.push({ k: 'hx', i, terms: [T(h.a, h.x, h.y, 1, 0), T(h.b, h.x, h.y, -1, 0)] });
+      cols.push({ k: 'hy', i, terms: [T(h.a, h.x, h.y, 0, 1), T(h.b, h.x, h.y, 0, -1)] });
+    });
+    ties.forEach((t, i) => {
+      const dx = t.xb - t.xa, dy = t.yb - t.ya, d = Math.hypot(dx, dy), ux = dx / d, uy = dy / d;
+      cols.push({ k: 'T', i, terms: [T(t.a, t.xa, t.ya, ux, uy), T(t.b, t.xb, t.yb, -ux, -uy)] });
+    });
+    const n = cols.length, m = 3 * B;
+    if (n < m) return { st: 'mech' };
+    if (n > m) return { st: 'indet' };
+    const A = []; const rhs = [];
+    for (let r = 0; r < m; r++) { A.push(new Array(n).fill(0)); rhs.push(0); }
+    cols.forEach((c, j) => c.terms.forEach(t => {
+      A[3 * t.b][j] += t.fx; A[3 * t.b + 1][j] += t.fy; A[3 * t.b + 2][j] += t.x * t.fy - t.y * t.fx + t.m;
+    }));
+    loads.forEach(l => { rhs[3 * l.b] -= l.fx; rhs[3 * l.b + 1] -= l.fy; rhs[3 * l.b + 2] -= l.x * l.fy - l.y * l.fx; });
+    const x = gauss(A, rhs);
+    if (!x) return { st: 'mech' };
+    return { st: 'ok', cols, x };
+  }
+
+  // ---------- 零件 ----------
+  const PARTS = {
+    R4:  { t: 'R', cap: 4,  price: 1, name: '滾支承', sub: '上限 4 t' },
+    R8:  { t: 'R', cap: 8,  price: 2, name: '滾支承', sub: '上限 8 t' },
+    R12: { t: 'R', cap: 12, price: 3, name: '滾支承', sub: '上限 12 t' },
+    P4:  { t: 'P', cap: 4,  hcap: 2, price: 2, name: '鉸支承', sub: '上限 4 t・水平 2 t' },
+    P8:  { t: 'P', cap: 8,  hcap: 4, price: 3, name: '鉸支承', sub: '上限 8 t・水平 4 t' },
+    P12: { t: 'P', cap: 12, hcap: 8, price: 5, name: '鉸支承', sub: '上限 12 t・水平 8 t' },
+    F12: { t: 'F', cap: 12, hcap: 8, mcap: 12, price: 0, name: '固定端', sub: '彎矩上限 12 t·m' },
+    F20: { t: 'F', cap: 12, hcap: 8, mcap: 20, price: 0, name: '固定端', sub: '彎矩上限 20 t·m' }
+  };
+  const TOPS = {
+    CW2: { w: 2, price: 1, name: '配重', sub: '2 t' },
+    C1:  { w: 1, price: 0, req: true, name: '貨', sub: '1 t' },
+    C2:  { w: 2, price: 0, req: true, name: '貨', sub: '2 t' },
+    C3:  { w: 3, price: 0, req: true, name: '貨', sub: '3 t' },
+    C4:  { w: 4, price: 0, req: true, name: '貨', sub: '4 t' },
+    C6:  { w: 6, price: 0, req: true, name: '貨', sub: '6 t' }
+  };
+  const TIES = { T6: { cap: 6, price: 3, name: '拉桿', sub: '上限 6 t' }, T10: { cap: 10, price: 5, name: '拉桿', sub: '上限 10 t' } };
+
+  // ---------- 玩法 A：放手 ----------
+  function archY(lv, rise, x) {
+    if (lv.shape === 'portal') return (x <= 0 || x >= lv.L) ? 0 : rise;
+    return 4 * rise * x * (lv.L - x) / (lv.L * lv.L);
+  }
+  // st: {sup:{slot:partKey}, top:{x:topKey}, rise:idx, tie:key|null}
+  function evalA(lv, st) {
+    const sup = [], hin = [], ties = [], loads = [], supMeta = [];
+    let cost = 0, B = 1;
+    const isArch = lv.type === 'arch';
+    let rise = 0;
+    // 必放的貨都放了嗎
+    if (lv.topTray) {
+      const used = {};
+      Object.keys(st.top || {}).forEach(x => { used[st.top[x]] = (used[st.top[x]] || 0) + 1; });
+      for (const it of lv.topTray) if (TOPS[it.k].req && (used[it.k] || 0) < it.n) return { st: 'incomplete', why: 'cargo' };
+    }
+    const bodyOf = isArch ? (x => (x <= lv.L / 2 ? 0 : 1))
+      : (x => (lv.hinges || []).filter(h => h < x - EPS).length);
+    if (isArch) {
+      B = 2; const r = lv.rises[st.rise || 0]; rise = r.h; cost += r.price;
+      hin.push({ a: 0, b: 1, x: lv.L / 2, y: rise });
+      if (st.tie) { const t = TIES[st.tie]; cost += t.price; ties.push({ a: 0, xa: 0, ya: 0, b: 1, xb: lv.L, yb: 0 }); }
+    } else {
+      (lv.hinges || []).forEach((h, i) => hin.push({ a: i, b: i + 1, x: h, y: 0 }));
+      B = (lv.hinges || []).length + 1;
+    }
+    const addSup = (x, key, fixed) => {
+      const p = PARTS[key]; if (!fixed) cost += p.price;
+      sup.push({ b: bodyOf(x === lv.L && isArch ? lv.L : x), x, y: 0, t: p.t });
+      supMeta.push({ x, key, p });
+    };
+    (lv.fixedSup || []).forEach(f => addSup(f.x, f.k, true));
+    Object.keys(st.sup || {}).map(Number).sort((a, b) => a - b).forEach(x => addSup(x, st.sup[x], false));
+    if (!sup.length) return { st: 'incomplete', why: 'nosup' };
+    const Y = x => (isArch ? archY(lv, rise, x) : 0);
+    (lv.cargo || []).forEach(c => loads.push({ b: bodyOf(c.x), x: c.x, y: Y(c.x), fx: 0, fy: -c.w }));
+    (lv.dist || []).forEach(d => {
+      const cuts = [d.x1].concat((lv.hinges || []).filter(h => h > d.x1 && h < d.x2), [d.x2]);
+      for (let i = 0; i < cuts.length - 1; i++) {
+        const a = cuts[i], b = cuts[i + 1], mid = (a + b) / 2;
+        loads.push({ b: bodyOf(mid), x: mid, y: Y(mid), fx: 0, fy: -d.q * (b - a) });
+      }
+    });
+    (lv.pulls || []).forEach(p => loads.push({ b: bodyOf(p.x), x: p.x, y: p.y != null ? p.y : Y(p.x), fx: p.fx, fy: p.fy }));
+    Object.keys(st.top || {}).map(Number).forEach(x => {
+      const t = TOPS[st.top[x]]; cost += t.price;
+      loads.push({ b: bodyOf(x), x, y: Y(x), fx: 0, fy: -t.w });
+    });
+    const res = statics(B, sup, hin, ties, loads);
+    const out = { cost, sup: supMeta, reac: [], fails: [], tie: null };
+    if (res.st === 'indet') { out.st = 'indet'; return out; }
+    if (res.st === 'mech') {
+      out.st = 'fail';
+      const hasH = sup.some(s => s.t !== 'R');
+      out.fails.push({ kind: hasH ? 'mech' : 'slip' });
+      return out;
+    }
+    supMeta.forEach(() => out.reac.push({ V: 0, H: 0, M: 0 }));
+    res.cols.forEach((c, j) => {
+      const v = Math.abs(res.x[j]) < 1e-9 ? 0 : res.x[j];
+      if (c.k === 'V' || c.k === 'H' || c.k === 'M') out.reac[c.i][c.k] = v;
+      if (c.k === 'T') out.tie = v;
+    });
+    out.reac.forEach((r, i) => {
+      const p = supMeta[i].p, x = supMeta[i].x;
+      if (r.V < -EPS) out.fails.push({ kind: 'uplift', i, x, val: -r.V });
+      else if (r.V > p.cap + EPS) out.fails.push({ kind: 'crush', i, x, val: r.V, cap: p.cap });
+      if (p.t !== 'R' && Math.abs(r.H) > p.hcap + EPS) out.fails.push({ kind: 'hpush', i, x, val: Math.abs(r.H), cap: p.hcap });
+      if (p.t === 'F' && Math.abs(r.M) > p.mcap + EPS) out.fails.push({ kind: 'mcrush', i, x, val: Math.abs(r.M), cap: p.mcap });
+    });
+    if (st.tie && out.tie != null) {
+      const t = TIES[st.tie];
+      if (out.tie > t.cap + EPS) out.fails.push({ kind: 'tie', val: out.tie, cap: t.cap });
+      else if (out.tie < -EPS) out.fails.push({ kind: 'tieC', val: -out.tie });
+    }
+    out.st = out.fails.length ? 'fail' : 'ok';
+    return out;
+  }
+
+  // 列舉所有配置（給搜尋與提示用）
+  function* enumA(lv) {
+    const slots = lv.slots || [], tray = lv.tray || [];
+    const topSlots = lv.topSlots || [], topTray = lv.topTray || [];
+    const riseN = lv.type === 'arch' ? lv.rises.length : 1;
+    const tieOpts = lv.type === 'arch' ? [null].concat(lv.ties || []) : [null];
+    function* supAssign(i, left, cur) {
+      if (i === slots.length) { yield Object.assign({}, cur); return; }
+      yield* supAssign(i + 1, left, cur);
+      for (const it of tray) {
+        if ((left[it.k] || 0) > 0) {
+          left[it.k]--; cur[slots[i]] = it.k;
+          yield* supAssign(i + 1, left, cur);
+          delete cur[slots[i]]; left[it.k]++;
+        }
+      }
+    }
+    function* topAssign(i, left, cur) {
+      if (i === topSlots.length) { yield Object.assign({}, cur); return; }
+      yield* topAssign(i + 1, left, cur);
+      for (const it of topTray) {
+        if ((left[it.k] || 0) > 0) {
+          left[it.k]--; cur[topSlots[i]] = it.k;
+          yield* topAssign(i + 1, left, cur);
+          delete cur[topSlots[i]]; left[it.k]++;
+        }
+      }
+    }
+    const l0 = {}; tray.forEach(t => { l0[t.k] = t.n; });
+    const t0 = {}; topTray.forEach(t => { t0[t.k] = t.n; });
+    const tops = Array.from(topAssign(0, t0, {}));
+    for (const s of supAssign(0, l0, {})) for (const tp of tops)
+      for (let r = 0; r < riseN; r++) for (const tie of tieOpts) yield { sup: s, top: tp, rise: r, tie };
+  }
+
+  // ---------- 玩法 B：大跨度屋頂 ----------
+  const FORMS = {
+    beam:  { name: '梁', param: null },
+    truss: { name: '桁架', param: '深度' },
+    vier:  { name: '空腹構架', param: '深度' },
+    arch:  { name: '拱', param: '矢高' },
+    cable: { name: '纜索', param: '垂度' }
+  };
+  const TIE_B = [null, { cap: 40, price: 8 }, { cap: 80, price: 14 }, { cap: 160, price: 24 }];
+  const ANCHOR = [{ add: 0, price: 0 }, { add: 40, price: 6 }, { add: 100, price: 12 }];
+  const BALLAST = { step: 0.5, price: 2, max: 4 };
+  function lenK(f, L) { return 1 + (8 / 3) * (f / L) * (f / L); }
+  // st: {form, p (參數值), tie:0..3, anchor:0..2, stab:bool, ballast:n}
+  function evalB(lv, st) {
+    const L = lv.L, f = st.p;
+    const wt = lv.w + (st.form === 'cable' ? (st.ballast || 0) * BALLAST.step : 0);
+    const M = wt * L * L / 8;
+    const out = { st: 'ok', fails: [], pre: [], cost: 0, M, wt, H: 0, resist: 0 };
+    const anchor = ANCHOR[st.anchor || 0];
+    let cost = 0;
+    if (st.form === 'beam') {
+      out.depth = L / 20; cost = Math.ceil(M / 5);
+      if (out.depth > lv.down + EPS) out.pre.push({ kind: 'clear', val: out.depth, cap: lv.down });
+    } else if (st.form === 'truss' || st.form === 'vier') {
+      out.depth = f; out.chord = M / f;
+      cost = Math.ceil((st.form === 'vier' ? 2 : 1) * (M / f) * L / 100) + 10;
+      if (f > lv.down + EPS) out.pre.push({ kind: 'clear', val: f, cap: lv.down });
+      if (st.form === 'truss' && lv.noDiag) out.pre.push({ kind: 'diag' });
+    } else if (st.form === 'arch') {
+      out.H = M / f; cost = Math.ceil(out.H * L / 100 * lenK(f, L)) + 6;
+      if (f > lv.up + EPS) out.pre.push({ kind: 'height', val: f, cap: lv.up });
+      const tie = TIE_B[st.tie || 0];
+      cost += anchor.price + (tie ? tie.price : 0);
+      if (tie) { out.resist = tie.cap; if (out.H > tie.cap + EPS) out.fails.push({ kind: 'tie', val: out.H, cap: tie.cap }); }
+      else { out.resist = lv.hcap + anchor.add; if (out.H > out.resist + EPS) out.fails.push({ kind: 'thrust', val: out.H, cap: out.resist }); }
+    } else if (st.form === 'cable') {
+      out.H = M / f; cost = Math.ceil(out.H * L / 250 * lenK(f, L)) + 8;
+      if (f > lv.down + EPS) out.pre.push({ kind: 'clear', val: f, cap: lv.down });
+      cost += anchor.price + (st.ballast || 0) * BALLAST.price + (st.stab ? stabPrice(lv) : 0);
+      out.resist = lv.hcap + anchor.add;
+      if (out.H > out.resist + EPS) out.fails.push({ kind: 'pull', val: out.H, cap: out.resist });
+      if ((lv.wind || 0) > 0 && !st.stab && wt <= lv.wind + EPS) out.fails.push({ kind: 'wind', val: lv.wind, cap: wt });
+    }
+    out.cost = cost;
+    if (out.pre.length) out.st = 'pre'; else if (out.fails.length) out.st = 'fail';
+    return out;
+  }
+  function stabPrice(lv) { return Math.ceil(lv.L / 5); }
+  function* enumB(lv) {
+    for (const form of lv.forms) {
+      const ps = form === 'beam' ? [0] : lv.opts[form];
+      for (const p of ps) {
+        if (form === 'arch') { for (let t = 0; t < TIE_B.length; t++) for (let a = 0; a < ANCHOR.length; a++) { if (t && a) continue; yield { form, p, tie: t, anchor: a }; } }
+        else if (form === 'cable') { for (let a = 0; a < ANCHOR.length; a++) for (const s of [false, true]) for (let b = 0; b <= BALLAST.max; b++) yield { form, p, anchor: a, stab: s, ballast: b }; }
+        else yield { form, p };
+      }
+    }
+  }
+
+  const api = { statics, evalA, enumA, evalB, enumB, PARTS, TOPS, TIES, FORMS, TIE_B, ANCHOR, BALLAST, archY, stabPrice, lenK };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.ENG = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+// 關卡資料
+(function (root) {
+  'use strict';
+  const range = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; };
+
+  const A = [
+    { id: 'a1', name: '第一根梁', client: '工地主任', live: true,
+      brief: '鋼梁吊上來了，中間壓著一件 6 t 的貨。吊車鬆鉤前，把兩個支承架好。',
+      tip: '按住下面的零件，拖到梁下的圓點再放開；點一下裝好的零件可以收回。這一關會即時顯示每個支承受多少力。',
+      L: 6, cargo: [{ x: 3, w: 6 }], slots: range(0, 6),
+      tray: [{ k: 'P4', n: 1 }, { k: 'R4', n: 1 }] },
+    { id: 'a2', name: '重的靠哪邊', client: '工地主任', live: true,
+      brief: '8 t 的貨偏在左邊。兩個支承一強一弱，哪個該放哪邊？',
+      tip: '貨離哪個支承近，那個支承就分到比較多。',
+      L: 8, cargo: [{ x: 2, w: 8 }], slots: range(0, 8),
+      tray: [{ k: 'P8', n: 1 }, { k: 'R4', n: 1 }] },
+    { id: 'a3', name: '兩件貨', client: '倉儲行',
+      brief: '梁上有 6 t 和 3 t 兩件貨。支承自己挑，買越便宜的賺越多。',
+      tip: '從這關起，放手之前看不到受力，要先算。對其中一個支承取力矩最快。',
+      L: 8, cargo: [{ x: 2, w: 6 }, { x: 8, w: 3 }], slots: range(0, 7),
+      tray: [{ k: 'P4', n: 1 }, { k: 'P8', n: 1 }, { k: 'R4', n: 1 }, { k: 'R8', n: 1 }] },
+    { id: 'a4', name: '鋼筋堆', client: '鋼筋廠',
+      brief: '一堆鋼筋平均鋪在梁上，每公尺 2 t，鋪了 4 m；右邊還有一件 2 t 的貨。',
+      tip: '平均鋪的貨，可以當成全部集中在它的正中間。',
+      L: 10, dist: [{ x1: 2, x2: 6, q: 2 }], cargo: [{ x: 9, w: 2 }], slots: range(0, 10),
+      tray: [{ k: 'P4', n: 1 }, { k: 'P8', n: 1 }, { k: 'R4', n: 1 }, { k: 'R8', n: 1 }] },
+    { id: 'a5', name: '伸出去的梁', client: '招牌店',
+      brief: '梁的右端伸到馬路上方，掛著 4 t 的招牌。馬路上不能放支承。',
+      tip: '貨掛在支承外側，另一端會翹起來。配重可以把它壓回去。',
+      L: 10, cargo: [{ x: 10, w: 4 }], slots: range(0, 6), blocked: { x1: 6.5, x2: 10, label: '馬路' },
+      tray: [{ k: 'P4', n: 1 }, { k: 'P8', n: 1 }, { k: 'R8', n: 1 }, { k: 'R12', n: 1 }],
+      topSlots: range(0, 5), topTray: [{ k: 'CW2', n: 4 }] },
+    { id: 'a6', name: '牆上的雨遮', client: '房東',
+      brief: '雨遮只靠牆上的固定端撐著。三件貨都要放上去，怎麼排牆才不會裂？',
+      tip: '固定端還要擋「轉動」。每件貨的重量乘上它離牆的距離，加起來就是牆要擋的彎矩。',
+      L: 5, fixedSup: [{ x: 0, k: 'F12' }], slots: [],
+      tray: [], topSlots: range(1, 5), topTray: [{ k: 'C4', n: 1 }, { k: 'C2', n: 1 }, { k: 'C1', n: 1 }] },
+    { id: 'a7', name: '斜拉的鋼索', client: '吊裝公司',
+      brief: '梁的右端被一條鋼索斜斜往下拉，力量 5 t，方向是 3：4：5 的三角形。',
+      tip: '斜的力拆成水平 3 t 和垂直 4 t。水平的力只有鉸支承擋得住。',
+      L: 8, cargo: [{ x: 3, w: 6 }], pulls: [{ x: 8, fx: 3, fy: -4, label: '5 t' }], slots: range(0, 8),
+      tray: [{ k: 'P4', n: 1 }, { k: 'P8', n: 1 }, { k: 'R4', n: 2 }, { k: 'R8', n: 1 }] },
+    { id: 'a8', name: '接起來的梁', client: '橋梁包商',
+      brief: '兩段梁用內鉸接在一起。內鉸會傳力，但擋不住轉動。',
+      tip: '先看右邊那一小段：它一頭掛在內鉸上，一頭要有支承。',
+      L: 12, hinges: [8], cargo: [{ x: 3, w: 6 }, { x: 10, w: 4 }], slots: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12],
+      tray: [{ k: 'P4', n: 1 }, { k: 'P8', n: 1 }, { k: 'R4', n: 2 }, { k: 'R8', n: 2 }] },
+    { id: 'a9', name: '中間掛一段', client: '橋梁包商',
+      brief: '兩邊各伸出一段，中間那段用兩個內鉸掛著，上面有 8 t。河道上不能放支承。',
+      tip: '中間那段的重量平分到兩個內鉸，再各自壓在兩邊伸出來的梁端。伸出去的那一頭被壓，另一頭就會翹。',
+      L: 12, hinges: [4, 8], cargo: [{ x: 6, w: 8 }], slots: [0, 1, 2, 3, 9, 10, 11, 12], blocked: { x1: 3.5, x2: 8.5, label: '河道' },
+      tray: [{ k: 'P8', n: 1 }, { k: 'P12', n: 1 }, { k: 'R4', n: 2 }, { k: 'R8', n: 2 }, { k: 'R12', n: 1 }],
+      topSlots: [0, 1, 11, 12], topTray: [{ k: 'CW2', n: 4 }] },
+    { id: 'a10', name: '三鉸拱', client: '公園處', type: 'arch',
+      brief: '兩片拱在頂端用鉸接起來，頂上掛 8 t。拱腳會往外推，推力看拱有多高。',
+      tip: '頂端的鉸擋不住轉動：對頂端取力矩，可以算出拱腳的水平推力。',
+      L: 12, rises: [{ h: 3, price: 3 }, { h: 4, price: 4 }, { h: 6, price: 6 }], cargo: [{ x: 6, w: 8 }],
+      slots: [0, 12], tray: [{ k: 'P4', n: 2 }, { k: 'P8', n: 2 }, { k: 'P12', n: 2 }, { k: 'R4', n: 1 }, { k: 'R8', n: 1 }],
+      ties: ['T6', 'T10'] },
+    { id: 'a11', name: '歪一邊的拱', client: '公園處', type: 'arch',
+      brief: '同樣是三鉸拱，但 8 t 掛在左半邊四分之一的位置。',
+      tip: '兩邊拱腳的水平推力一樣大，垂直的力卻不一樣。',
+      L: 16, rises: [{ h: 4, price: 4 }, { h: 8, price: 8 }], cargo: [{ x: 4, w: 8 }],
+      slots: [0, 16], tray: [{ k: 'P4', n: 2 }, { k: 'P8', n: 2 }, { k: 'P12', n: 2 }, { k: 'R4', n: 1 }, { k: 'R8', n: 1 }],
+      ties: ['T6', 'T10'] }
+  ];
+
+  const B = [
+    { id: 'b1', name: '社區活動室', client: '里長',
+      brief: '跨度只有 12 m 的小屋頂。先從最簡單的做起。',
+      tip: '點選屋頂的形式，用 ‹ › 調整，估價會跟著變。跨度短的時候，一根梁最省事也最便宜。',
+      L: 12, w: 2, up: 3, down: 2, hcap: 10, forms: ['beam', 'truss'], opts: { truss: [1, 2] } },
+    { id: 'b2', name: '學校體育館', client: '校長',
+      brief: '跨度 40 m，中間不能有柱子。屋頂下方最多只能往下佔 4 m。',
+      tip: '梁的用料跟著彎矩走，跨度加倍，彎矩變四倍。把材料拉開成上下兩條弦，就是桁架。',
+      L: 40, w: 2, up: 4, down: 4, hcap: 10, forms: ['beam', 'truss'], opts: { truss: [2, 4, 5, 8] } },
+    { id: 'b3', name: '傳統市場', client: '市場自治會',
+      brief: '跨度 40 m。屋頂可以拱起來，最高 10 m。兩側的牆各擋得住 30 t 的水平力。',
+      tip: '拱把重量變成沿著拱身的壓力，用料少；但拱腳會往外推，推力＝w×L×L÷8÷矢高。',
+      L: 40, w: 2, up: 10, down: 4, hcap: 30, forms: ['beam', 'truss', 'arch'], opts: { truss: [2, 4, 5, 8], arch: [4, 5, 8, 10, 16] } },
+    { id: 'b4', name: '航道下的機棚', client: '機場公司',
+      brief: '跨度 40 m。上方是航道，屋頂最高只能拱 5 m；下方要停飛機，最多往下佔 2 m。',
+      tip: '拱越扁推力越大。擋不住的時候，可以在兩個拱腳之間拉一根拉桿。',
+      L: 40, w: 2, up: 5, down: 2, hcap: 30, forms: ['beam', 'truss', 'arch'], opts: { truss: [2, 4, 5, 8], arch: [4, 5, 8, 10, 16, 20] } },
+    { id: 'b5', name: '河濱展覽館', client: '文化局',
+      brief: '跨度 60 m 的輕屋頂，每公尺只有 1 t。兩側的塔柱各擋得住 20 t 的水平力。',
+      tip: '纜索把重量變成拉力，鋼索很能受拉，所以最省料；但兩端會被往內拉，拉力一樣是 w×L×L÷8÷垂度。',
+      L: 60, w: 1, up: 6, down: 9, hcap: 20, forms: ['truss', 'arch', 'cable'], opts: { truss: [3, 5, 6, 9], arch: [3, 5, 6, 9, 10, 15], cable: [3, 5, 6, 9, 10, 15] } },
+    { id: 'b6', name: '海邊的看台棚', client: '體育處',
+      brief: '跨度 60 m、每公尺 1 t 的輕屋頂。這裡風大，風會把屋頂往上掀，力量每公尺 1.2 t。',
+      tip: '纜索只能受拉，屋頂比風輕就會被掀起來。可以加重，也可以加一組反向的穩定索。加重之後拉力也會變大。',
+      L: 60, w: 1, up: 5, down: 6, hcap: 40, wind: 1.2, forms: ['truss', 'arch', 'cable'], opts: { truss: [3, 5, 6, 9], arch: [3, 5, 6, 9, 10, 15], cable: [3, 5, 6, 9, 10, 15] } },
+    { id: 'b7', name: '空中走廊', client: '百貨公司',
+      brief: '跨度 30 m 的連通道，結構就是走廊的牆面，中間要開整排大窗，不能有斜桿。',
+      tip: '空腹構架沒有斜桿，力只能靠桿件彎曲來傳，所以比桁架費料。',
+      L: 30, w: 2, up: 2, down: 5, hcap: 10, noDiag: true, forms: ['beam', 'truss', 'vier', 'arch'], opts: { truss: [3, 5], vier: [3, 5], arch: [3, 5, 9] } },
+    { id: 'b8', name: '市立巨蛋', client: '市長',
+      brief: '跨度 80 m、每公尺 2 t。最高可以拱 20 m，下方最多佔 10 m。兩側各擋得住 60 t，風的上掀力每公尺 1.5 t。',
+      tip: '幾種做法都可行。把每一種的推力或拉力算出來，再比價錢。',
+      L: 80, w: 2, up: 20, down: 10, hcap: 60, wind: 1.5, forms: ['truss', 'arch', 'cable'], opts: { truss: [5, 8, 10], arch: [8, 10, 16, 20], cable: [5, 8, 10, 16] } }
+  ];
+
+  const api = { A, B };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.LEVELS = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>window.BEST = {"a1":{"best":3,"sol":{"sup":{"2":"P4","5":"R4"},"top":{},"rise":0,"tie":null},"nBest":14},"a2":{"best":4,"sol":{"sup":{"2":"P8","8":"R4"},"top":{},"rise":0,"tie":null},"nBest":22},"a3":{"best":4,"sol":{"sup":{"3":"P8","7":"R4"},"top":{},"rise":0,"tie":null},"nBest":18},"a4":{"best":4,"sol":{"sup":{"4":"P8","9":"R4"},"top":{},"rise":0,"tie":null},"nBest":28},"a5":{"best":6,"sol":{"sup":{"5":"P4","6":"R8"},"top":{"1":"CW2","3":"CW2"},"rise":0,"tie":null},"nBest":37},"a6":{"best":0,"sol":{"sup":{},"top":{"1":"C4","2":"C2","4":"C1"},"rise":0,"tie":null},"nBest":3},"a7":{"best":4,"sol":{"sup":{"4":"P8","8":"R4"},"top":{},"rise":0,"tie":null},"nBest":10},"a8":{"best":4,"sol":{"sup":{"3":"P4","5":"R4","11":"R4"},"top":{},"rise":0,"tie":null},"nBest":36},"a9":{"best":9,"sol":{"sup":{"2":"P8","3":"R4","9":"R4","10":"R8"},"top":{"0":"CW2","12":"CW2"},"rise":0,"tie":null},"nBest":122},"a10":{"best":10,"sol":{"sup":{"0":"P4","12":"R4"},"top":{},"rise":1,"tie":"T6"},"nBest":2},"a11":{"best":10,"sol":{"sup":{"0":"P8","16":"P8"},"top":{},"rise":0,"tie":null},"nBest":1},"b1":{"best":8,"sol":{"form":"beam","p":0},"nBest":1},"b2":{"best":50,"sol":{"form":"truss","p":4},"nBest":1},"b3":{"best":31,"sol":{"form":"arch","p":10,"tie":0,"anchor":1},"nBest":1},"b4":{"best":52,"sol":{"form":"arch","p":5,"tie":0,"anchor":2},"nBest":1},"b5":{"best":27,"sol":{"form":"cable","p":9,"anchor":1,"stab":false,"ballast":0},"nBest":1},"b6":{"best":45,"sol":{"form":"cable","p":6,"anchor":1,"stab":true,"ballast":0},"nBest":1},"b7":{"best":37,"sol":{"form":"vier","p":5},"nBest":1},"b8":{"best":74,"sol":{"form":"cable","p":10,"anchor":2,"stab":false,"ballast":0},"nBest":1}};</script>
+<script>
+(function () {
+  'use strict';
+  const E = window.ENG, LV = window.LEVELS, BEST = window.BEST;
+  const $ = s => document.querySelector(s);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const ease = t => 1 - Math.pow(1 - t, 3);
+  const fmt = v => { const r = Math.round(v * 100) / 100; return Math.abs(r - Math.round(r)) < 1e-9 ? String(Math.round(r)) : String(r); };
+  const C = { steel: '#2f3b4c', load: '#f08a24', loadD: '#b65f0c', sup: '#2e9e6b', supD: '#1f7a50', bad: '#e5484d', ui: '#2b6de0', ink: '#1f2733', mute: '#7a8696', conc: '#c9d2dc', wind: '#3aa0d8' };
+
+  // ---------- 關卡中繼資料 ----------
+  const META = {}; const ORDER = { A: [], B: [] };
+  LV.A.forEach((l, i) => { const b = BEST[l.id].best; META[l.id] = { mode: 'A', i, lv: l, best: b, fee: b + 6, testFee: 2, tol: 3, sol: BEST[l.id].sol }; ORDER.A.push(l.id); });
+  LV.B.forEach((l, i) => { const b = BEST[l.id].best, tf = Math.max(3, Math.round(b * 0.1)); META[l.id] = { mode: 'B', i, lv: l, best: b, fee: Math.ceil(b * 1.3 / 5) * 5 + 5, testFee: tf, tol: Math.ceil(tf * 1.5), sol: BEST[l.id].sol }; ORDER.B.push(l.id); });
+  const MODE = { A: { name: '放手', sub: '支承反力', go: '放手', desc: '吊車鬆鉤之前把支承架好。每個支承受的力，照力平衡和力矩平衡來算。' },
+                 B: { name: '大跨度屋頂', sub: '形抗與大跨度結構', go: '試載', desc: '選屋頂的形式、調它的形狀，再接住它傳到兩側的力。' } };
+
+  // ---------- 存檔 ----------
+  let save = { stars: {}, profit: {}, skip: {}, mute: false };
+  try { const s = JSON.parse(localStorage.getItem('sg0') || 'null'); if (s) save = Object.assign(save, s); } catch (e) { /* 沒有存檔也能玩 */ }
+  const persist = () => { try { localStorage.setItem('sg0', JSON.stringify(save)); } catch (e) { /* 忽略 */ } };
+
+  // ---------- 音效 ----------
+  let ac = null;
+  function tone(f, d, type, vol, when) {
+    if (save.mute) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = ac.currentTime + (when || 0), o = ac.createOscillator(), g = ac.createGain();
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f, t0);
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol || 0.06, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+      o.connect(g); g.connect(ac.destination); o.start(t0); o.stop(t0 + d + 0.02);
+    } catch (e) { /* 沒有聲音也能玩 */ }
+  }
+  const sfx = {
+    tap() { tone(620, 0.05, 'triangle', 0.05); },
+    place() { tone(300, 0.07, 'square', 0.04); tone(200, 0.1, 'sine', 0.08, 0.03); },
+    remove() { tone(240, 0.06, 'triangle', 0.05); },
+    go() { tone(180, 0.3, 'sawtooth', 0.04); tone(360, 0.25, 'sine', 0.05, 0.12); },
+    win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.16, 'triangle', 0.08, i * 0.09)); },
+    fail() { tone(140, 0.25, 'sawtooth', 0.08); tone(85, 0.4, 'sine', 0.12, 0.06); },
+    star(i) { tone(880 + i * 180, 0.14, 'triangle', 0.08); }
+  };
+
+  // ---------- 狀態 ----------
+  const G = { meta: null, lv: null, st: null, fails: 0, hinted: false, anim: null, drag: null, busy: false };
+  window.__g = G;
+
+  function starsFor(profit, meta, hinted) {
+    const bp = meta.fee - meta.best;
+    let s = profit >= bp - 1e-9 ? 3 : (profit >= bp - meta.tol - 1e-9 ? 2 : 1);
+    if (hinted) s = Math.min(s, 2);
+    return s;
+  }
+  function unlocked(id) {
+    const m = META[id]; if (m.i === 0) return true;
+    const prev = ORDER[m.mode][m.i - 1];
+    return !!(save.stars[prev] || save.skip[prev]);
+  }
+  function curEval() { return G.meta.mode === 'A' ? E.evalA(G.lv, G.st) : E.evalB(G.lv, G.st); }
+
+  // ---------- 首頁 ----------
+  function renderHome() {
+    const all = ORDER.A.concat(ORDER.B);
+    const st = all.reduce((a, id) => a + (save.stars[id] || 0), 0);
+    const money = all.reduce((a, id) => a + (save.profit[id] || 0), 0);
+    let h = `<header class="top"><div class="brand"><b>結構事務所</b><span>原型</span></div>
+      <div class="wallet"><span>資金 <b>$${money}</b></span><span>★ <b>${st}</b>／${all.length * 3}</span></div>
+      <button class="ghost" id="mute">${save.mute ? '音效 關' : '音效 開'}</button></header><div class="homeBody">`;
+    for (const mode of ['A', 'B']) {
+      h += `<section class="mode"><div class="modeHead"><h2>${MODE[mode].name}</h2><span>${MODE[mode].sub}</span></div><p>${MODE[mode].desc}</p><div class="grid">`;
+      ORDER[mode].forEach((id, i) => {
+        const m = META[id], open = unlocked(id), s = save.stars[id] || 0;
+        h += `<button class="lvbtn ${open ? '' : 'locked'} ${s ? 'done' : ''}" data-id="${id}" ${open ? '' : 'disabled'}>
+          <span class="num">${i + 1}</span><span class="nm">${m.lv.name}</span>
+          <span class="st">${[1, 2, 3].map(k => `<i class="${k <= s ? 'on' : ''}">★</i>`).join('')}</span></button>`;
+      });
+      h += '</div></section>';
+    }
+    h += '<p class="foot">原型只有兩種玩法。進度存在這台裝置的瀏覽器裡。</p></div>';
+    $('#home').innerHTML = h;
+    $('#home').hidden = false; $('#level').hidden = true; closeSheet();
+  }
+
+  // ---------- 進入關卡 ----------
+  function startLevel(id) {
+    const m = META[id];
+    G.meta = m; G.lv = m.lv; G.fails = 0; G.hinted = false; G.anim = null; G.drag = null; G.busy = false;
+    if (m.mode === 'A') G.st = { sup: {}, top: {}, rise: 0, tie: null };
+    else { const f = m.lv.forms[0]; G.st = { form: f, p: defP(m.lv, f), tie: 0, anchor: 0, stab: false, ballast: 0 }; }
+    const n = ORDER[m.mode].length;
+    $('#level').innerHTML = `
+      <header class="lvtop"><button class="ghost" id="back" aria-label="回選單">‹</button>
+        <div class="lvname"><small>${MODE[m.mode].name}　${m.i + 1}／${n}</small><b>${m.lv.name}</b></div>
+        <button class="ghost" id="hintBtn">求救</button></header>
+      <div class="brief"><span class="who">${m.lv.client}</span><p>${m.lv.brief}</p><p class="tip">${m.lv.tip}</p></div>
+      <div class="stage"><svg id="scene" viewBox="0 ${vbY(m)} 360 ${240 - vbY(m)}" preserveAspectRatio="xMidYMid meet"></svg><div id="hit"></div><div id="toast"></div></div>
+      <div class="ledger" id="ledger"></div>
+      <div class="tray" id="tray"></div>
+      <div class="actions"><button class="ghost" id="reset">清空</button><button class="primary" id="go">${MODE[m.mode].go}</button></div>`;
+    $('#home').hidden = true; $('#level').hidden = false; closeSheet();
+    renderAll();
+  }
+  function vbY(m) {
+    if (m.mode === 'A') return 24;
+    const lv = m.lv, s = (BG.x2 - BG.x1) / lv.L, rise = Math.max(lv.up, lv.forms.indexOf('arch') >= 0 ? Math.max.apply(null, lv.opts.arch) : 0);
+    return Math.round(clamp(BG.ref - rise * s - 44, 0, 80));
+  }
+  function defP(lv, f) { if (f === 'beam') return 0; const o = lv.opts[f]; return o[Math.floor((o.length - 1) / 2)]; }
+
+  function renderAll() { renderScene(); renderTray(); renderLedger(); }
+  function renderScene() { $('#scene').innerHTML = G.meta.mode === 'A' ? sceneA() : sceneB(); }
+  function renderLedger() {
+    const r = curEval(), m = G.meta, cost = r.cost || 0, pen = G.fails * m.testFee;
+    $('#ledger').innerHTML = `<span>委託費 <b>$${m.fee}</b></span><span>${m.mode === 'A' ? '零件' : '造價'} <b>−$${cost}</b></span><span>試載失敗 ${G.fails} 次 <b>−$${pen}</b></span><span class="pf">利潤 <b>$${m.fee - cost - pen}</b></span>`;
+  }
+
+  // ================= 玩法 A 場景 =================
+  function geomA(lv) {
+    const isArch = lv.type === 'arch'; const mx = 30, mr0 = lv.pulls ? 62 : 30; let s = (360 - mx - mr0) / lv.L, x0 = mx;
+    if (isArch) { const mr = Math.max.apply(null, lv.rises.map(r => r.h)); s = Math.min(s, 100 / mr); x0 = (360 - s * lv.L) / 2; }
+    const beamY = 126, th = 9, ground = 186;
+    return { s, x0, X: m => x0 + m * s, beamY, th, ground, isArch, supTop: isArch ? 152 : beamY + th };
+  }
+  const DEFS = `<defs>
+    <linearGradient id="sky" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="200"><stop offset="0" stop-color="#cfe6fb"/><stop offset="1" stop-color="#f3f8fd"/></linearGradient>
+    <pattern id="hat" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#ded6c4"/><rect width="2" height="6" fill="#cbbf9f"/></pattern>
+    <pattern id="road" width="14" height="6" patternUnits="userSpaceOnUse"><rect width="14" height="6" fill="#59616d"/><rect x="2" y="2.5" width="7" height="1" fill="#f4d35e"/></pattern>
+    <pattern id="river" width="16" height="6" patternUnits="userSpaceOnUse"><rect width="16" height="6" fill="#8ec9ee"/><path d="M0 3q4 -3 8 0t8 0" fill="none" stroke="#fff" stroke-width="1"/></pattern>
+    <pattern id="stripe" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(60)"><rect width="5" height="5" fill="#f6b56b"/><rect width="2" height="5" fill="#f08a24"/></pattern>
+  </defs>`;
+  function supSVG(x, key, top, ground, o) {
+    o = o || {}; const p = E.PARTS[key], col = o.bad ? C.bad : C.sup, colD = o.bad ? '#b4232a' : C.supD;
+    const w = 8 + p.cap * 0.55, hT = Math.min(22, ground - top - 10), baseY = top + hT;
+    let tf = `translate(${o.dx || 0} ${o.dy || 0})`;
+    if (o.squash) tf += ` translate(${x} ${ground}) scale(1 ${1 - 0.45 * o.squash}) translate(${-x} ${-ground})`;
+    let s = `<g transform="${tf}" opacity="${o.ghost ? 0.55 : 1}">`;
+    s += `<rect x="${x - w + 1}" y="${baseY + 3}" width="${2 * w - 2}" height="${ground - baseY - 3}" fill="${C.conc}" stroke="#aab4c0" stroke-width=".6"/>`;
+    s += `<rect x="${x - w - 3}" y="${baseY}" width="${2 * w + 6}" height="3" rx="1" fill="${colD}"/>`;
+    if (p.t === 'R') {
+      s += `<path d="M${x} ${top}L${x - w} ${baseY - 7}H${x + w}Z" fill="${col}" stroke="${colD}" stroke-width="1" stroke-linejoin="round"/>`;
+      s += `<circle cx="${x - w / 2}" cy="${baseY - 3.4}" r="3.1" fill="#fff" stroke="${colD}" stroke-width="1.2"/><circle cx="${x + w / 2}" cy="${baseY - 3.4}" r="3.1" fill="#fff" stroke="${colD}" stroke-width="1.2"/>`;
+    } else {
+      s += `<path d="M${x} ${top}L${x - w} ${baseY}H${x + w}Z" fill="${col}" stroke="${colD}" stroke-width="1" stroke-linejoin="round"/>`;
+      s += `<circle cx="${x}" cy="${top + 2.5}" r="2.8" fill="#fff" stroke="${colD}" stroke-width="1.2"/>`;
+    }
+    return s + '</g>';
+  }
+  function crate(x, yBottom, w, label, kind, o) {
+    const side = kind === 'cw' ? 17 : clamp(15 + w * 1.6, 17, 30), fill = kind === 'cw' ? '#5b6676' : C.load, st = kind === 'cw' ? '#39424f' : C.loadD;
+    return `<g opacity="${o && o.ghost ? 0.55 : 1}"><rect x="${x - side / 2}" y="${yBottom - side}" width="${side}" height="${side}" rx="2.5" fill="${fill}" stroke="${st}" stroke-width="1"/>
+      <text x="${x}" y="${yBottom - side / 2 + 3.4}" text-anchor="middle" font-size="${side > 20 ? 10 : 8.5}" font-weight="700" fill="#fff">${label}</text></g>`;
+  }
+  function sceneA() {
+    const lv = G.lv, st = G.st, g = geomA(lv), an = G.anim, t = an ? an.t : 0;
+    const res = an ? an.res : (lv.live ? E.evalA(lv, st) : null);
+    const ph = (a, b) => clamp((t - a) / (b - a), 0, 1), q = an ? ease(ph(0.55, 1)) : 0;
+    const fails = (an && an.res.st === 'fail') ? an.res.fails : [], f0 = fails[0];
+    const multi = g.isArch || (lv.hinges && lv.hinges.length);
+    let o = DEFS + `<rect x="-400" y="-300" width="1160" height="${g.ground + 300}" fill="url(#sky)"/><rect x="-400" y="${g.ground}" width="1160" height="500" fill="#efe8d8"/><path d="M-400 ${g.ground}H760" stroke="#b9ad90" stroke-width="1.5"/>`;
+    if (lv.blocked) {
+      const b = lv.blocked, river = b.label === '河道';
+      o += `<rect x="${g.X(b.x1)}" y="${g.ground}" width="${g.X(b.x2) - g.X(b.x1)}" height="11" fill="url(#${river ? 'river' : 'road'})"/>
+        <text x="${(g.X(b.x1) + g.X(b.x2)) / 2}" y="${g.ground - 4}" text-anchor="middle" font-size="9" fill="${C.mute}">${b.label}・不能放支承</text>`;
+    }
+    // 尺
+    const step = lv.L > 10 ? 2 : 1;
+    o += `<path d="M${g.X(0)} 221H${g.X(lv.L)}" stroke="#a79c82" stroke-width="1"/>`;
+    for (let m = 0; m <= lv.L; m++) {
+      o += `<path d="M${g.X(m)} ${m % step ? 219 : 217}V221" stroke="#a79c82" stroke-width="1"/>`;
+      if (m % step === 0) o += `<text x="${g.X(m)}" y="232" text-anchor="middle" font-size="8.5" fill="${C.mute}">${m}${m === lv.L ? ' m' : ''}</text>`;
+    }
+    // 空位
+    (lv.slots || []).forEach(x => { if (st.sup[x] == null) o += `<circle cx="${g.X(x)}" cy="${g.supTop + 6}" r="2.4" fill="#fff" stroke="${C.sup}" stroke-width="1" opacity=".85"/>`; });
+    // 支承
+    const supList = (lv.fixedSup || []).map(f => ({ x: f.x, k: f.k, fixed: true })).concat(Object.keys(st.sup).map(Number).sort((a, b) => a - b).map(x => ({ x, k: st.sup[x] })));
+    supList.forEach((sp, i) => {
+      const p = E.PARTS[sp.k], X = g.X(sp.x), bad = fails.filter(f => f.i === i);
+      if (p.t === 'F') {
+        const crack = bad.length ? q : 0;
+        o += `<rect x="${X - 24}" y="${g.beamY - 46}" width="24" height="${g.ground - g.beamY + 46}" fill="${C.conc}" stroke="#aab4c0"/><rect x="${X - 24}" y="${g.beamY - 46}" width="24" height="${g.ground - g.beamY + 46}" fill="url(#hat)" opacity=".35"/>`;
+        if (crack) o += `<path d="M${X - 1} ${g.beamY - 12}l-7 9l5 6l-8 10l4 7" fill="none" stroke="${C.bad}" stroke-width="${1 + crack}" stroke-linejoin="round"/>`;
+        return;
+      }
+      const opt = {};
+      if (bad.length && q) {
+        opt.bad = true;
+        if (bad[0].kind === 'crush') opt.squash = q;
+        if (bad[0].kind === 'hpush') opt.dx = q * 9 * (res.reac[i].H > 0 ? -1 : 1);
+      }
+      if (f0 && f0.kind === 'slip' && q) opt.bad = false;
+      o += supSVG(X, sp.k, g.supTop, g.ground, opt);
+    });
+    // 結構群組的動畫
+    let tf = '';
+    if (f0 && q) {
+      const others = supList.filter((s, i) => i !== f0.i && E.PARTS[s.k].t !== 'F');
+      const pivX = f0.x != null && others.length ? others.reduce((a, s) => Math.abs(s.x - f0.x) > Math.abs(a.x - f0.x) ? s : a, others[0]).x : (supList[0] ? supList[0].x : lv.L / 2);
+      const py = g.beamY + g.th;
+      if (multi) tf = `translate(${Math.sin(t * 60) * 1.6 * (1 - q)} ${q * 7})`;
+      else if (f0.kind === 'crush') tf = `rotate(${(f0.x >= pivX ? 1 : -1) * 4.5 * q} ${g.X(pivX)} ${py})`;
+      else if (f0.kind === 'uplift') tf = `rotate(${(f0.x >= pivX ? -1 : 1) * 6 * q} ${g.X(pivX)} ${py})`;
+      else if (f0.kind === 'slip') { const dir = (lv.pulls || []).reduce((a, p) => a + p.fx, 0) < 0 ? -1 : 1; tf = `translate(${dir * 46 * q} ${q * q * 30}) rotate(${dir * 5 * q} ${g.X(lv.L / 2)} ${py})`; }
+      else if (f0.kind === 'mech') tf = `translate(0 ${q * 34}) rotate(${7 * q} ${g.X(supList[0] ? supList[0].x : 0)} ${py})`;
+      else if (f0.kind === 'hpush') tf = `translate(${q * 9 * (res.reac[f0.i].H > 0 ? -1 : 1)} 0)`;
+      else if (f0.kind === 'mcrush') tf = `rotate(${9 * q} ${g.X(0)} ${py})`;
+    } else if (an && an.res.st === 'ok') tf = `translate(0 ${Math.sin(ph(0.3, 0.7) * Math.PI) * 2.2})`;
+    o += `<g transform="${tf}">`;
+    let rise = 0, spread = 0;
+    if (g.isArch) {
+      rise = lv.rises[st.rise].h;
+      const hf = fails.find(f => f.kind === 'hpush' || f.kind === 'tie' || f.kind === 'slip' || f.kind === 'mech');
+      if (hf && q) { spread = 9 * q; }
+      const drop = hf ? 0.4 * q : 0, R = rise * (1 - drop) * g.s, xa = g.X(0) - spread, xb = g.X(lv.L) + spread, xm = (xa + xb) / 2, fy = g.supTop;
+      // 臨時支撐架
+      const fw = 1 - ph(0, 0.3);
+      if (fw > 0) for (let k = 1; k <= 5; k++) { const u = k / 6, xx = xa + (xb - xa) * u, yy = fy - 4 * R * u * (1 - u); o += `<path d="M${xx} ${yy + 5}V${g.ground}" stroke="#b08a52" stroke-width="2" opacity="${0.7 * fw}"/>`; }
+      if (st.tie) {
+        const tieBad = fails.some(f => f.kind === 'tie') && q;
+        o += tieBad ? `<path d="M${xa} ${fy - 1}H${xm - 6 - 10 * q}M${xm + 6 + 10 * q} ${fy - 1}H${xb}" stroke="${C.bad}" stroke-width="2.4"/>` : `<path d="M${xa} ${fy - 1}H${xb}" stroke="${C.ui}" stroke-width="2.4"/><text x="${xm}" y="${fy - 5}" text-anchor="middle" font-size="8.5" fill="${C.ui}">拉桿</text>`;
+      }
+      o += `<path d="M${xa} ${fy}Q${(xa + xm) / 2} ${fy - R} ${xm} ${fy - R}" fill="none" stroke="${C.steel}" stroke-width="6" stroke-linecap="round"/>
+            <path d="M${xm} ${fy - R}Q${(xm + xb) / 2} ${fy - R} ${xb} ${fy}" fill="none" stroke="#46566b" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="${xm}" cy="${fy - R}" r="4" fill="#fff" stroke="${C.steel}" stroke-width="1.6"/>`;
+      if (!an) o += `<path d="M${xb + 18} ${fy - R}V${fy}M${xb + 14} ${fy - R}h8M${xb + 14} ${fy}h8" fill="none" stroke="${C.mute}" stroke-width=".9"/><path d="M${xm + 6} ${fy - R}H${xb + 12}" stroke="${C.mute}" stroke-width=".6" stroke-dasharray="2 3"/><text x="${xb + 24}" y="${fy - R / 2 + 3}" font-size="9.5" font-weight="700" fill="${C.ink}">拱高 ${rise} m</text>`;
+      (lv.cargo || []).forEach(c => {
+        const u = c.x / lv.L, xx = xa + (xb - xa) * u, yy = fy - 4 * R * u * (1 - u);
+        const side = clamp(15 + c.w * 1.6, 17, 30), by = Math.min(yy + 12 + side, fy - 8);
+        o += `<path d="M${xx} ${yy}V${by - side}" stroke="${C.loadD}" stroke-width="1.4"/>` + crate(xx, by, c.w, c.w + ' t', 'cargo');
+      });
+    } else {
+      const segs = [0].concat(lv.hinges || [], [lv.L]);
+      for (let i = 0; i < segs.length - 1; i++) o += `<rect x="${g.X(segs[i])}" y="${g.beamY}" width="${g.X(segs[i + 1]) - g.X(segs[i])}" height="${g.th}" rx="1.5" fill="${i % 2 ? '#46566b' : C.steel}"/>`;
+      (lv.hinges || []).forEach(hx => { o += `<circle cx="${g.X(hx)}" cy="${g.beamY + g.th / 2}" r="4.6" fill="#fff" stroke="${C.steel}" stroke-width="1.8"/>`; });
+      // 吊索
+      const sl = 1 - ph(0, 0.3);
+      if (sl > 0 && !lv.fixedSup) {
+        const hx = g.X(lv.L / 2), hy = 54 - (1 - sl) * 60;
+        o += `<g opacity="${sl}"><path d="M${hx} -300V${hy}" stroke="#5b6676" stroke-width="2"/><path d="M${g.X(lv.L * 0.22)} ${g.beamY}L${hx} ${hy}L${g.X(lv.L * 0.78)} ${g.beamY}" fill="none" stroke="#5b6676" stroke-width="1.2" stroke-dasharray="4 3"/><rect x="${hx - 5}" y="${hy - 6}" width="10" height="9" rx="2" fill="#f4d35e" stroke="#b79a1f"/></g>`;
+      }
+      (lv.dist || []).forEach(d => {
+        o += `<rect x="${g.X(d.x1)}" y="${g.beamY - 13}" width="${g.X(d.x2) - g.X(d.x1)}" height="13" rx="2" fill="url(#stripe)" stroke="${C.loadD}"/>
+          <text x="${(g.X(d.x1) + g.X(d.x2)) / 2}" y="${g.beamY - 17}" text-anchor="middle" font-size="9" font-weight="700" fill="${C.loadD}" stroke="#e6f1fb" stroke-width="3" paint-order="stroke">每公尺 ${d.q} t × ${d.x2 - d.x1} m</text>`;
+      });
+      (lv.cargo || []).forEach(c => { o += crate(g.X(c.x), g.beamY, c.w, c.w + ' t', 'cargo'); });
+      (lv.topSlots || []).forEach(x => { if (st.top[x] == null) o += `<circle cx="${g.X(x)}" cy="${g.beamY - 5}" r="2.4" fill="#fff" stroke="${C.load}" stroke-width="1" opacity=".9"/>`; });
+      Object.keys(st.top).map(Number).forEach(x => { const k = st.top[x], tp = E.TOPS[k]; o += crate(g.X(x), g.beamY, tp.w, tp.w + (k === 'CW2' ? '' : ' t'), k === 'CW2' ? 'cw' : 'cargo'); });
+      (lv.pulls || []).forEach(p => {
+        const k = 6.5, X = g.X(p.x), Y = g.beamY + g.th / 2, x2 = X + p.fx * k, y2 = Y - p.fy * k;
+        o += `<path d="M${X} ${Y}H${x2}V${y2}" fill="none" stroke="${C.mute}" stroke-width=".8" stroke-dasharray="2 2"/>
+          <path d="M${X} ${Y}L${x2} ${y2}" stroke="${C.loadD}" stroke-width="2.4"/><path d="M${x2} ${y2}l-7.5 -4.5l4.5 7.5z" fill="${C.loadD}" transform="rotate(${Math.atan2(y2 - Y, x2 - X) * 180 / Math.PI - 45} ${x2} ${y2})"/>
+          <text x="${(X + x2) / 2}" y="${Y - 3}" text-anchor="middle" font-size="8" fill="${C.mute}">${Math.abs(p.fx)}</text><text x="${x2 + 3}" y="${(Y + y2) / 2 + 3}" font-size="8" fill="${C.mute}">${Math.abs(p.fy)}</text>
+          <text x="${X + 2}" y="${y2 + 4}" text-anchor="end" font-size="9.5" font-weight="700" fill="${C.loadD}">${p.label}</text>`;
+      });
+    }
+    o += '</g>';
+    // 拖曳中的預覽
+    if (G.drag && G.drag.target != null) {
+      const d = G.drag, X = g.X(d.target);
+      o += `<path d="M${X} 50V${g.ground}" stroke="${C.ui}" stroke-width="1" stroke-dasharray="3 3"/><rect x="${X - 17}" y="34" width="34" height="16" rx="8" fill="${C.ui}"/><text x="${X}" y="45.5" text-anchor="middle" font-size="9.5" font-weight="700" fill="#fff">${d.target} m</text>`;
+      if (d.kind === 'sup') o += supSVG(X, d.key, g.supTop, g.ground, { ghost: true });
+      else { const tp = E.TOPS[d.key]; o += crate(X, g.beamY, tp.w, tp.w + (d.key === 'CW2' ? '' : ' t'), d.key === 'CW2' ? 'cw' : 'cargo', { ghost: true }); }
+    }
+    // 讀數
+    let lastX = -99, lastRow = 0;
+    supList.forEach((sp, i) => {
+      const p = E.PARTS[sp.k], X = g.X(sp.x);
+      const row = (X - lastX < 34) ? 1 - lastRow : 0; lastX = X; lastRow = row; const y = 198 + row * 10;
+      const show = res && res.reac && res.reac[i] && (lv.live && !an || ph(0.3, 0.31) > 0);
+      if (p.t === 'F') {
+        const lab = show ? `彎矩 ${fmt(Math.abs(res.reac[i].M) * (an ? ease(ph(0.3, 0.6)) : 1))}／${p.mcap} t·m` : `固定端　彎矩上限 ${p.mcap} t·m`;
+        const bad = show && Math.abs(res.reac[i].M) > p.mcap + 1e-6;
+        o += `<text x="${X - 22}" y="208" font-size="9.5" font-weight="700" fill="${bad ? C.bad : C.ink}">${lab}</text>`; return;
+      }
+      if (show) {
+        const r = res.reac[i], k = an ? ease(ph(0.3, 0.6)) : 1, V = r.V * k;
+        const bad = r.V > p.cap + 1e-6 || r.V < -1e-6 || Math.abs(r.H) > (p.hcap || 0) + 1e-6;
+        o += `<text x="${X}" y="${y}" text-anchor="middle" font-size="9.5" font-weight="700" fill="${bad ? C.bad : C.supD}">${fmt(V)}<tspan font-weight="400" fill="${C.mute}">／${p.cap}</tspan></text>`;
+        if (Math.abs(r.H) > 1e-6) o += `<text x="${X}" y="${y + 9.5}" text-anchor="middle" font-size="8" fill="${Math.abs(r.H) > p.hcap + 1e-6 ? C.bad : C.mute}">水平 ${fmt(Math.abs(r.H) * k)}／${p.hcap}</text>`;
+      } else o += `<text x="${X}" y="${y}" text-anchor="middle" font-size="8.5" fill="${C.mute}">上限 ${p.cap}</text>`;
+    });
+    return o;
+  }
+
+  function trayA() {
+    const lv = G.lv, st = G.st; let h = '';
+    if (lv.type === 'arch') {
+      const r = lv.rises[st.rise];
+      h += `<div class="ctlrow">${stepper('拱高', `${r.h} m`, `$${r.price}`, 'rise')}</div>`;
+    }
+    h += '<div class="cards">';
+    const icon = t => t === 'R' ? '<svg viewBox="0 0 36 26"><path d="M18 3L8 17H28Z" fill="#2e9e6b"/><circle cx="13" cy="20.5" r="3" fill="#fff" stroke="#1f7a50" stroke-width="1.3"/><circle cx="23" cy="20.5" r="3" fill="#fff" stroke="#1f7a50" stroke-width="1.3"/></svg>'
+      : '<svg viewBox="0 0 36 26"><path d="M18 3L7 21H29Z" fill="#2e9e6b"/><rect x="4" y="21" width="28" height="3" rx="1" fill="#1f7a50"/><circle cx="18" cy="5.5" r="2.8" fill="#fff" stroke="#1f7a50" stroke-width="1.3"/></svg>';
+    (lv.tray || []).forEach(it => {
+      const p = E.PARTS[it.k], used = Object.keys(st.sup).filter(x => st.sup[x] === it.k).length, left = it.n - used;
+      h += `<div class="card ${left ? '' : 'out'}" data-kind="sup" data-key="${it.k}">${icon(p.t)}<b>${p.name}</b><i>上限 ${p.cap} t${p.t === 'P' ? `<br>水平 ${p.hcap} t` : ''}</i><em>$${p.price}</em><span class="cnt">×${left}</span></div>`;
+    });
+    (lv.topTray || []).forEach(it => {
+      const p = E.TOPS[it.k], used = Object.keys(st.top).filter(x => st.top[x] === it.k).length, left = it.n - used, cw = it.k === 'CW2';
+      h += `<div class="card ${left ? '' : 'out'}" data-kind="top" data-key="${it.k}"><svg viewBox="0 0 36 26"><rect x="9" y="4" width="18" height="18" rx="3" fill="${cw ? '#5b6676' : C.load}"/><text x="18" y="17" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">${p.w}</text></svg><b>${p.name}</b><i>${p.w} t${p.req ? '<br>一定要放' : ''}</i><em>${p.price ? '$' + p.price : '免費'}</em><span class="cnt">×${left}</span></div>`;
+    });
+    (lv.ties || []).forEach(k => {
+      const p = E.TIES[k];
+      h += `<div class="card tog ${st.tie === k ? 'sel' : ''}" data-kind="tie" data-key="${k}"><svg viewBox="0 0 36 26"><path d="M4 13H32" stroke="#2b6de0" stroke-width="3"/><circle cx="4" cy="13" r="3" fill="#2b6de0"/><circle cx="32" cy="13" r="3" fill="#2b6de0"/></svg><b>${p.name}</b><i>上限 ${p.cap} t<br>點一下裝上</i><em>$${p.price}</em></div>`;
+    });
+    return h + '</div>';
+  }
+  function stepper(label, val, extra, key, dis) {
+    return `<div class="stepper ${dis ? 'dis' : ''}"><span class="lab">${label}</span><button data-step="${key}:-1" aria-label="減少">‹</button><span class="val">${val}${extra ? `<small>${extra}</small>` : ''}</span><button data-step="${key}:1" aria-label="增加">›</button></div>`;
+  }
+
+  // ================= 玩法 B 場景 =================
+  const BG = { x1: 46, x2: 314, ref: 140, ground: 222 };
+  function sceneB() {
+    const lv = G.lv, st = G.st, an = G.anim, t = an ? an.t : 0, res = an ? an.res : E.evalB(lv, st);
+    const ph = (a, b) => clamp((t - a) / (b - a), 0, 1), q = an && res.st === 'fail' ? ease(ph(0.6, 1)) : 0, f0 = res.fails[0];
+    const s = (BG.x2 - BG.x1) / lv.L, ref = BG.ref, gd = BG.ground;
+    let o = DEFS + `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="${C.load}"/></marker><marker id="aw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="${C.wind}"/></marker></defs>
+      <rect x="-400" y="-300" width="1160" height="${gd + 300}" fill="url(#sky)"/><rect x="-400" y="${gd}" width="1160" height="500" fill="#efe8d8"/><path d="M-400 ${gd}H760" stroke="#b9ad90" stroke-width="1.5"/>`;
+    const ty = vbY(G.meta);
+    o += `<text x="180" y="${ty + 13}" text-anchor="middle" font-size="10" fill="${C.ink}">跨度 <tspan font-weight="700">${lv.L} m</tspan>　屋頂每公尺 <tspan font-weight="700">${fmt(res.wt)} t</tspan>　兩側各擋 <tspan font-weight="700">${lv.hcap + E.ANCHOR[st.anchor].add} t</tspan></text>`;
+    if (lv.wind) o += `<text x="180" y="${ty + 26}" text-anchor="middle" font-size="10" fill="${C.wind}">風往上掀　每公尺 <tspan font-weight="700">${lv.wind} t</tspan></text>`;
+    // 限制線
+    const yu = ref - lv.up * s, yd = ref + lv.down * s;
+    const preUp = res.pre.some(p => p.kind === 'height'), preDn = res.pre.some(p => p.kind === 'clear');
+    o += `<path d="M${BG.x1 - 22} ${yu}H${BG.x2 + 22}" stroke="${preUp ? C.bad : '#8a97a8'}" stroke-width="${preUp ? 1.6 : 1}" stroke-dasharray="5 4"/><text x="${BG.x2 + 22}" y="${yu - 3}" text-anchor="end" font-size="9.5" fill="${preUp ? C.bad : C.mute}">限高 ${lv.up} m</text>
+          <path d="M${BG.x1 + 2} ${yd}H${BG.x2 - 2}" stroke="${preDn ? C.bad : '#8a97a8'}" stroke-width="${preDn ? 1.6 : 1}" stroke-dasharray="5 4"/><text x="${BG.x2 - 4}" y="${yd + 10}" text-anchor="end" font-size="9.5" fill="${preDn ? C.bad : C.mute}">下方要淨空（最多往下佔 ${lv.down} m）</text>`;
+    // 兩側的牆
+    let shift = 0, lean = 0;
+    if (q && f0) { if (f0.kind === 'thrust' || f0.kind === 'tie') shift = 13 * q; if (f0.kind === 'pull') lean = 9 * q; }
+    const wall = (x, dir) => {
+      const X = x + dir * shift, tier = st.anchor;
+      let w = `<g transform="rotate(${-dir * lean} ${X} ${gd})">`;
+      if ((st.form === 'arch' || st.form === 'cable') && tier) { const b = tier === 1 ? 20 : 34; w += `<path d="M${X + dir * 13} ${ref + 6}L${X + dir * (13 + b)} ${gd}H${X + dir * 13}Z" fill="#b9c3cf" stroke="#93a0b0"/>`; }
+      w += `<rect x="${dir > 0 ? X : X - 14}" y="${ref}" width="14" height="${gd - ref}" fill="${C.conc}" stroke="#93a0b0"/><rect x="${dir > 0 ? X : X - 14}" y="${ref}" width="14" height="${gd - ref}" fill="url(#hat)" opacity=".3"/>`;
+      return w + '</g>';
+    };
+    o += wall(BG.x1, -1) + wall(BG.x2, 1);
+    const xa = BG.x1 - shift, xb = BG.x2 + shift, span = xb - xa, f = st.p;
+    const okB = an && res.st === 'ok' ? Math.sin(ph(0.35, 0.8) * Math.PI) * 1.8 : 0;
+    let topY = u => ref;
+    if (st.form === 'beam') {
+      const d = Math.max(4, lv.L / 20 * s);
+      o += `<rect x="${xa}" y="${ref + okB}" width="${span}" height="${d}" fill="${C.steel}" rx="1"/>`;
+    } else if (st.form === 'truss' || st.form === 'vier') {
+      const d = f * s, n = 8, pw = span / n, y1 = ref + okB, y2 = ref + d + okB, vier = st.form === 'vier', sw = vier ? 3.4 : 2;
+      let p = `M${xa} ${y1}H${xb}M${xa} ${y2}H${xb}`;
+      for (let i = 0; i <= n; i++) p += `M${xa + i * pw} ${y1}V${y2}`;
+      o += `<path d="${p}" fill="none" stroke="${C.steel}" stroke-width="${sw}" stroke-linecap="square"/>`;
+      if (!vier) { let dg = ''; for (let i = 0; i < n; i++) dg += i < n / 2 ? `M${xa + i * pw} ${y1}L${xa + (i + 1) * pw} ${y2}` : `M${xa + (i + 1) * pw} ${y1}L${xa + i * pw} ${y2}`; o += `<path d="${dg}" fill="none" stroke="${lv.noDiag ? C.bad : '#5b6b80'}" stroke-width="1.6"/>`; }
+    } else if (st.form === 'arch') {
+      const R = f * s * (1 - 0.45 * q) - okB;
+      topY = u => ref - 4 * R * u * (1 - u);
+      if (st.tie) {
+        const broke = q && f0 && f0.kind === 'tie', xm = (xa + xb) / 2;
+        o += broke ? `<path d="M${xa} ${ref}H${xm - 5 - 14 * q}M${xm + 5 + 14 * q} ${ref}H${xb}" stroke="${C.bad}" stroke-width="2.4"/>` : `<path d="M${xa} ${ref}H${xb}" stroke="${C.ui}" stroke-width="2.4"/>`;
+      }
+      o += `<path d="M${xa} ${ref}Q${(xa + xb) / 2} ${ref - 2 * R} ${xb} ${ref}" fill="none" stroke="${C.steel}" stroke-width="5.5" stroke-linecap="round"/>`;
+      if (!an) o += `<path d="M180 ${ref - R + 5}V${ref - 2}" stroke="${C.mute}" stroke-width=".8" stroke-dasharray="3 3"/><text x="185" y="${ref - R / 2 + 3}" font-size="9" fill="${C.ink}">矢高 ${f} m</text>`;
+    } else if (st.form === 'cable') {
+      let R = f * s * (1 + 0.5 * (f0 && f0.kind === 'pull' ? q : 0)) + okB;
+      if (q && f0 && f0.kind === 'wind') R = f * s * (1 - 2.1 * q) + Math.sin(t * 46) * 5 * q;
+      topY = u => ref + 4 * R * u * (1 - u);
+      if (st.stab) o += `<path d="M${xa} ${ref + f * s * 0.95}Q${(xa + xb) / 2} ${ref + f * s * 0.95 - f * s * 0.9} ${xb} ${ref + f * s * 0.95}" fill="none" stroke="${C.ui}" stroke-width="1.6"/>` + [0.25, 0.5, 0.75].map(u => `<path d="M${xa + span * u} ${topY(u)}V${ref + f * s * 0.95 - 4 * f * s * 0.45 * u * (1 - u)}" stroke="${C.ui}" stroke-width=".9"/>`).join('');
+      o += `<path d="M${xa} ${ref}Q${(xa + xb) / 2} ${ref + 2 * R} ${xb} ${ref}" fill="none" stroke="${C.steel}" stroke-width="3.2" stroke-linecap="round"/>`;
+      for (let i = 0; i < (st.ballast || 0); i++) for (const u of [0.3, 0.5, 0.7]) o += `<rect x="${xa + span * u - 4 + (i - (st.ballast - 1) / 2) * 9}" y="${topY(u) + 2}" width="8" height="7" rx="1.5" fill="#5b6676"/>`;
+      if (!an) o += `<path d="M180 ${ref + 2}V${ref + R - 4}" stroke="${C.mute}" stroke-width=".8" stroke-dasharray="3 3"/><text x="185" y="${ref + R / 2 + 3}" font-size="9" fill="${C.ink}">垂度 ${f} m</text>`;
+    }
+    // 載重與風
+    if (an) {
+      const a1 = ph(0, 0.35);
+      for (let i = 1; i < 10; i++) { const u = i / 10, X = xa + span * u, Y = topY(u) - 5; o += `<path d="M${X} ${Y - 22 - (1 - a1) * 14}V${Y}" stroke="${C.load}" stroke-width="1.8" marker-end="url(#ah)" opacity="${a1}"/>`; }
+      if (lv.wind) { const a2 = ph(0.35, 0.6); for (let i = 1; i < 8; i++) { const u = i / 8, X = xa + span * u, Y = topY(u) + 8; o += `<path d="M${X} ${Y + 24 + (1 - a2) * 10}V${Y}" stroke="${C.wind}" stroke-width="1.8" marker-end="url(#aw)" opacity="${a2}"/>`; } }
+      if (res.H && ph(0.35, 0.36) > 0) {
+        const out = st.form === 'arch', k = ease(ph(0.35, 0.6)), bad = res.st === 'fail' && f0.kind !== 'wind';
+        const lab = `${out ? '推力' : '拉力'} ${fmt(res.H * k)}／${res.resist} t`;
+        const ar = (x, dir) => `<path d="M${x} ${ref + 14}h${dir * 15}" stroke="${bad ? C.bad : C.load}" stroke-width="2.6" marker-end="url(#ah)"/>`;
+        if (!(st.form === 'arch' && st.tie)) o += out ? ar(xa - 15, -1) + ar(xb + 15, 1) : ar(xa - 31, 1) + ar(xb + 31, -1);
+        o += `<text x="180" y="${gd + 14}" text-anchor="middle" font-size="10.5" font-weight="700" fill="${bad ? C.bad : C.supD}">${st.form === 'arch' && st.tie ? '拉桿受力' : '每側' + (out ? '推力' : '拉力')} ${fmt(res.H * k)} t／擋得住 ${res.resist} t</text>`;
+      }
+    }
+    o += `<path d="M${BG.x1} ${gd + 4}v5M${BG.x2} ${gd + 4}v5" stroke="#a79c82"/>`;
+    if (!an) o += `<text x="180" y="${gd + 13}" text-anchor="middle" font-size="9" fill="${C.mute}">${st.form === 'beam' ? `梁深 ${fmt(lv.L / 20)} m（跨度的 1/20）` : ''}${res.pre.length ? (st.form === 'beam' ? '　' : '') + preText(res.pre[0]) : ''}</text>`;
+    return o;
+  }
+  function preText(p) { return p.kind === 'height' ? '超過限高，不能這樣蓋' : p.kind === 'clear' ? '佔到下方的淨空，不能這樣蓋' : '這裡不能有斜桿'; }
+
+  function trayB() {
+    const lv = G.lv, st = G.st, r = E.evalB(lv, st); let h = '<div class="forms">';
+    const ic = { beam: '<rect x="3" y="10" width="30" height="6" fill="#2f3b4c"/>',
+      truss: '<path d="M3 8H33M3 18H33M3 8L10.5 18L18 8L25.5 18L33 8" fill="none" stroke="#2f3b4c" stroke-width="2"/>',
+      vier: '<path d="M3 8H33V18H3ZM13 8V18M23 8V18" fill="none" stroke="#2f3b4c" stroke-width="2.4"/>',
+      arch: '<path d="M3 21Q18 -4 33 21" fill="none" stroke="#2f3b4c" stroke-width="3" stroke-linecap="round"/>',
+      cable: '<path d="M3 6Q18 30 33 6" fill="none" stroke="#2f3b4c" stroke-width="2.2" stroke-linecap="round"/>' };
+    lv.forms.forEach(f => { h += `<button class="form ${st.form === f ? 'sel' : ''}" data-form="${f}"><svg viewBox="0 0 36 26">${ic[f]}</svg><b>${E.FORMS[f].name}</b></button>`; });
+    h += '</div><div class="ctlrow">';
+    if (st.form !== 'beam') h += stepper(E.FORMS[st.form].param, `${st.p} m`, '', 'p');
+    if (st.form === 'arch') {
+      const tb = E.TIE_B[st.tie];
+      h += stepper('拉桿', tb ? `上限 ${tb.cap} t` : '不裝', tb ? `$${tb.price}` : '', 'tie');
+    }
+    if (st.form === 'arch' || st.form === 'cable') { const a = E.ANCHOR[st.anchor]; h += stepper(st.form === 'arch' ? '加強兩側' : '加強錨碇', a.add ? `多擋 ${a.add} t` : '不加', a.add ? `$${a.price}` : '', 'anchor'); }
+    if (st.form === 'cable') {
+      h += stepper('加重', st.ballast ? `每公尺 +${fmt(st.ballast * E.BALLAST.step)} t` : '不加', st.ballast ? `$${st.ballast * E.BALLAST.price}` : '', 'ballast');
+      h += stepper('穩定索', st.stab ? '裝' : '不裝', st.stab ? `$${E.stabPrice(lv)}` : '', 'stab');
+    }
+    if (st.form === 'beam') h += '<div class="note">梁沒有可以調的地方：深度固定是跨度的 1/20，用料跟著彎矩（w×L×L÷8）走。</div>';
+    h += `</div><div class="est">估價 <b>$${r.cost}</b></div>`;
+    return h;
+  }
+
+  function renderTray() { $('#tray').innerHTML = G.meta.mode === 'A' ? trayA() : trayB(); }
+
+  // ---------- 操作 ----------
+  function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2600); }
+  function stepB(key, d) {
+    const lv = G.lv, st = G.st;
+    if (G.meta.mode === 'A') { if (key === 'rise') st.rise = clamp(st.rise + d, 0, lv.rises.length - 1); }
+    else if (key === 'p') { const o = lv.opts[st.form], i = clamp(o.indexOf(st.p) + d, 0, o.length - 1); st.p = o[i]; }
+    else if (key === 'tie') st.tie = clamp(st.tie + d, 0, E.TIE_B.length - 1);
+    else if (key === 'anchor') st.anchor = clamp(st.anchor + d, 0, E.ANCHOR.length - 1);
+    else if (key === 'ballast') st.ballast = clamp(st.ballast + d, 0, E.BALLAST.max);
+    else if (key === 'stab') st.stab = d > 0;
+    sfx.tap(); renderAll();
+  }
+
+  // 拖曳（玩法 A）
+  const VB = () => { const y = vbY(G.meta); return { y, h: 240 - y }; };
+  function sceneX(clientX) { const r = $('#scene').getBoundingClientRect(), v = VB(); const sc = Math.min(r.width / 360, r.height / v.h); const ox = r.left + (r.width - 360 * sc) / 2; return (clientX - ox) / sc; }
+  function sceneY(clientY) { const r = $('#scene').getBoundingClientRect(), v = VB(); const sc = Math.min(r.width / 360, r.height / v.h); const oy = r.top + (r.height - v.h * sc) / 2; return (clientY - oy) / sc + v.y; }
+  function nearestSlot(kind, vx) {
+    const lv = G.lv, g = geomA(lv), st = G.st;
+    const list = kind === 'sup' ? (lv.slots || []).filter(x => st.sup[x] == null) : (lv.topSlots || []).filter(x => st.top[x] == null);
+    let best = null, bd = 1e9;
+    list.forEach(x => { const d = Math.abs(g.X(x) - vx); if (d < bd) { bd = d; best = x; } });
+    return bd < Math.max(g.s * 0.9, 26) ? best : null;
+  }
+  function startDrag(kind, key, from, ev) {
+    if (G.busy) return;
+    G.drag = { kind, key, from, target: null, x0: ev.clientX, y0: ev.clientY, moved: false, id: ev.pointerId };
+    const gh = $('#ghost'); gh.innerHTML = kind === 'sup' ? `${E.PARTS[key].name} ${E.PARTS[key].cap} t` : `${E.TOPS[key].name} ${E.TOPS[key].w} t`;
+    moveDrag(ev);
+  }
+  function moveDrag(ev) {
+    const d = G.drag; if (!d || ev.pointerId !== d.id) return;
+    if (Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) > 7) d.moved = true;
+    const trayTop = $('#tray').getBoundingClientRect().top, inStage = ev.clientY < trayTop + 6 || d.from != null;
+    const tg = (d.moved || d.from != null) && inStage ? nearestSlot(d.kind, sceneX(ev.clientX)) : null;
+    const gh = $('#ghost');
+    if (d.moved && tg == null) { gh.style.display = 'block'; gh.style.left = ev.clientX + 'px'; gh.style.top = (ev.clientY - 44) + 'px'; } else gh.style.display = 'none';
+    if (tg !== d.target) { d.target = tg; if (tg != null) sfx.tap(); renderScene(); }
+  }
+  function endDrag(ev) {
+    const d = G.drag; if (!d || (ev && ev.pointerId !== d.id)) return;
+    G.drag = null; $('#ghost').style.display = 'none';
+    const map = d.kind === 'sup' ? G.st.sup : G.st.top;
+    if (d.from != null && !d.moved) { sfx.remove(); }            // 點一下已放的零件：收回
+    else if (d.target != null) { map[d.target] = d.key; sfx.place(); }
+    else if (d.from != null) sfx.remove();
+    renderScene(); renderLedger();
+    setTimeout(renderTray, 40);   // 等手指事件收尾後再換掉卡片，避免下一次點擊失效
+  }
+  function hitDown(ev) {
+    if (G.meta.mode !== 'A' || G.busy || G.anim) return;
+    const lv = G.lv, g = geomA(lv), vx = sceneX(ev.clientX), vy = sceneY(ev.clientY), st = G.st;
+    let pick = null;
+    Object.keys(st.sup).map(Number).forEach(x => { if (Math.abs(g.X(x) - vx) < 15 && vy > g.supTop - 6 && vy < g.ground + 22) pick = { kind: 'sup', x }; });
+    Object.keys(st.top).map(Number).forEach(x => { if (Math.abs(g.X(x) - vx) < 13 && vy > g.beamY - 32 && vy < g.beamY + 4) pick = { kind: 'top', x }; });
+    if (!pick) return;
+    ev.preventDefault();
+    const map = pick.kind === 'sup' ? st.sup : st.top, key = map[pick.x];
+    delete map[pick.x];
+    startDrag(pick.kind, key, pick.x, ev);
+  }
+
+  // ---------- 試載 ----------
+  function go() {
+    if (G.busy) return;
+    const res = curEval();
+    if (res.st === 'incomplete') return toast(res.why === 'cargo' ? '貨還沒全部放上去。' : '還沒放支承。');
+    if (res.st === 'indet') return toast('約束太多了：這樣靜力算不出唯一的答案。先拿掉一個支承，或把一個鉸支承換成滾支承。');
+    if (res.st === 'pre') return toast(preText(res.pre[0]) + '。');
+    G.busy = true; sfx.go(); closeSheet();
+    const t0 = performance.now(), dur = res.st === 'ok' ? 1500 : 1900;
+    G.anim = { t: 0, res };
+    let failed = false;
+    (function frame(now) {
+      const t = clamp((now - t0) / dur, 0, 1); G.anim.t = t; renderScene();
+      if (!failed && res.st === 'fail' && t > 0.6) { failed = true; sfx.fail(); }
+      if (t < 1) return requestAnimationFrame(frame);
+      G.busy = false;
+      if (res.st === 'ok') win(res); else lose(res);
+    })(t0);
+  }
+  function failText(f, res) {
+    const A = G.meta.mode === 'A';
+    if (A) switch (f.kind) {
+      case 'crush': return `${f.x} m 的支承被壓壞了：它要頂 <b>${fmt(f.val)} t</b>，上限只有 ${f.cap} t。`;
+      case 'uplift': return `${f.x} m 的支承翹起來了：這裡要往下拉 <b>${fmt(f.val)} t</b> 才能平衡，但支承只能往上頂。`;
+      case 'slip': return '梁滑走了：沒有任何東西擋水平方向。至少要有一個鉸支承。';
+      case 'mech': return '結構會動：支承不夠，或擺的位置擋不住轉動。';
+      case 'hpush': return `${f.x} m 的鉸支承被水平力推壞了：水平 <b>${fmt(f.val)} t</b>，上限 ${f.cap} t。`;
+      case 'mcrush': return `牆上的固定端裂了：彎矩 <b>${fmt(f.val)} t·m</b>，上限 ${f.cap} t·m。`;
+      case 'tie': return `拉桿被拉斷了：拉力 <b>${fmt(f.val)} t</b>，上限 ${f.cap} t。`;
+      default: return '拉桿受壓，撐不住。';
+    }
+    switch (f.kind) {
+      case 'thrust': return `拱腳往外推 <b>${fmt(f.val)} t</b>，兩側只擋得住 ${f.cap} t，牆被推開了。`;
+      case 'tie': return `拉桿被拉斷了：拱的推力 <b>${fmt(f.val)} t</b>，拉桿上限 ${f.cap} t。`;
+      case 'pull': return `纜索往內拉 <b>${fmt(f.val)} t</b>，兩側只擋得住 ${f.cap} t，被拉倒了。`;
+      default: return `屋頂被風掀起來了：風每公尺往上 <b>${fmt(f.val)} t</b>，屋頂每公尺只有 ${fmt(f.cap)} t 重。`;
+    }
+  }
+  function lose(res) {
+    G.fails++; renderLedger();
+    const m = G.meta, canSkip = G.fails >= 2 && !save.stars[m.lv.id] && m.i < ORDER[m.mode].length - 1;
+    openSheet(`<div class="sheet fail"><h3>沒過</h3>${res.fails.slice(0, 2).map(f => `<p>${failText(f, res)}</p>`).join('')}
+      <p class="fee">試載費 −$${m.testFee}</p>
+      <div class="btns">${canSkip ? '<button class="ghost" data-act="skip">先跳過這關</button>' : ''}<button class="primary" data-act="retry">再調整</button></div></div>`);
+  }
+  function win(res) {
+    const m = G.meta, pen = G.fails * m.testFee, profit = m.fee - res.cost - pen, s = starsFor(profit, m, G.hinted), A = m.mode === 'A';
+    const prev = save.stars[m.lv.id] || 0;
+    if (s > prev || (s === prev && profit > (save.profit[m.lv.id] || -1e9))) { save.stars[m.lv.id] = Math.max(s, prev); save.profit[m.lv.id] = Math.max(profit, save.profit[m.lv.id] || 0); persist(); }
+    let forces = '';
+    if (A) {
+      forces = res.sup.map((sp, i) => { const r = res.reac[i], p = sp.p; return `<li>${sp.x} m ${p.name}：${p.t === 'F' ? `彎矩 ${fmt(Math.abs(r.M))}／${p.mcap} t·m、垂直 ${fmt(r.V)} t` : `垂直 ${fmt(r.V)}／${p.cap} t${Math.abs(r.H) > 1e-6 ? `、水平 ${fmt(Math.abs(r.H))}／${p.hcap} t` : ''}`}</li>`; }).join('');
+      if (res.tie != null) forces += `<li>拉桿：拉力 ${fmt(res.tie)}／${E.TIES[G.st.tie].cap} t</li>`;
+    } else {
+      const st = G.st;
+      forces = `<li>彎矩 w×L×L÷8 ＝ ${fmt(res.wt)}×${G.lv.L}×${G.lv.L}÷8 ＝ ${fmt(res.M)} t·m</li>`;
+      if (st.form === 'arch' || st.form === 'cable') forces += `<li>${st.form === 'arch' ? '推力' : '拉力'} ＝ ${fmt(res.M)} ÷ ${st.p} ＝ ${fmt(res.H)} t（擋得住 ${res.resist} t）</li>`;
+      else if (st.form !== 'beam') forces += `<li>上下弦受力 ＝ ${fmt(res.M)} ÷ ${st.p} ＝ ${fmt(res.chord)} t</li>`;
+    }
+    const best = profit >= m.fee - m.best - 1e-9, last = m.i >= ORDER[m.mode].length - 1;
+    const why = s === 3 ? '這是最賺的做法。' : G.hinted && best ? '用了求救，最多兩星。' : !best && pen === 0 ? '可以過，但還有更省的做法。' : pen && res.cost <= m.best ? '配置是最省的，只是多付了試載費。' : '還有更省的做法，也少試幾次。';
+    openSheet(`<div class="sheet win"><h3>驗收通過</h3><div class="stars">${[1, 2, 3].map(k => `<i data-k="${k}" class="${k <= s ? 'will' : ''}">★</i>`).join('')}</div>
+      <table><tr><td>委託費</td><td>$${m.fee}</td></tr><tr><td>${A ? '零件' : '造價'}</td><td>−$${res.cost}</td></tr><tr><td>試載失敗 ${G.fails} 次</td><td>−$${pen}</td></tr><tr class="sum"><td>利潤</td><td>$${profit}</td></tr></table>
+      <p class="why">${why}</p><details><summary>看這一關的力怎麼分配</summary><ul>${forces}</ul></details>
+      <div class="btns"><button class="ghost" data-act="home">選單</button><button class="ghost" data-act="again">再玩一次</button>${last ? '' : '<button class="primary" data-act="next">下一關</button>'}</div></div>`);
+    sfx.win();
+    document.querySelectorAll('.stars i.will').forEach((el, i) => setTimeout(() => { el.classList.add('on'); sfx.star(i); }, 500 + i * 260));
+  }
+  function openSheet(html) { const el = $('#sheet'); el.innerHTML = html; el.classList.add('on'); }
+  function closeSheet() { const el = $('#sheet'); el.classList.remove('on'); el.innerHTML = ''; }
+
+  // ---------- 求救：往最省的做法走一步 ----------
+  function hintStep() {
+    const m = G.meta, sol = m.sol, st = G.st; G.hinted = true;
+    if (m.mode === 'B') {
+      if (st.form !== sol.form) { st.form = sol.form; st.p = defP(G.lv, sol.form); return `先看「${E.FORMS[sol.form].name}」。`; }
+      if (st.form !== 'beam' && st.p !== sol.p) { st.p = sol.p; return `${E.FORMS[sol.form].param}調成 ${sol.p} m。`; }
+      for (const k of ['tie', 'anchor', 'ballast', 'stab']) if ((st[k] || 0) !== (sol[k] || 0) && sol[k] !== undefined) { st[k] = sol[k]; return '幫你調了一個加裝的項目，看看估價和受力。'; }
+      return '現在就是最省的做法，按試載吧。';
+    }
+    if (G.lv.type === 'arch' && st.rise !== sol.rise) { st.rise = sol.rise; return `拱高用 ${G.lv.rises[sol.rise].h} m。`; }
+    if (G.lv.type === 'arch' && (st.tie || null) !== (sol.tie || null)) { st.tie = sol.tie || null; return sol.tie ? '這關要裝拉桿。' : '這關不用拉桿。'; }
+    for (const kind of ['sup', 'top']) {
+      const cur = st[kind], want = sol[kind] || {};
+      for (const x of Object.keys(want)) if (cur[x] !== want[x]) {
+        const tray = (kind === 'sup' ? G.lv.tray : G.lv.topTray).find(t => t.k === want[x]);
+        const used = Object.keys(cur).filter(k => cur[k] === want[x]);
+        if (used.length >= tray.n) { const wrong = used.find(k => want[k] !== want[x]); if (wrong != null) delete cur[wrong]; }
+        cur[x] = want[x];
+        return `${x} m 這裡放「${kind === 'sup' ? E.PARTS[want[x]].name + ' 上限 ' + E.PARTS[want[x]].cap + ' t' : E.TOPS[want[x]].name + ' ' + E.TOPS[want[x]].w + ' t'}」。`;
+      }
+      for (const x of Object.keys(cur)) if (want[x] == null) { delete cur[x]; return `${x} m 這個不需要，拿掉。`; }
+    }
+    return '現在就是最省的做法，放手吧。';
+  }
+
+  // ---------- 事件 ----------
+  // 用 pointer 事件自己判斷「點一下」：拖曳剛結束時瀏覽器可能不送 click
+  let tap = null;
+  document.addEventListener('pointerdown', ev => { tap = { x: ev.clientX, y: ev.clientY, id: ev.pointerId, el: ev.target.closest('button, .card.tog') }; }, true);
+  document.addEventListener('pointercancel', () => { tap = null; }, true);
+  document.addEventListener('pointerup', ev => {
+    const s = tap; tap = null;
+    if (!s || !s.el || s.id !== ev.pointerId || Math.hypot(ev.clientX - s.x, ev.clientY - s.y) > 12) return;
+    const el = document.elementFromPoint(ev.clientX, ev.clientY);
+    if (el && s.el.contains(el) && document.contains(s.el)) onTap(s.el);
+  }, true);
+  function onTap(t) {
+    if (t.id === 'mute') { save.mute = !save.mute; persist(); renderHome(); sfx.tap(); return; }
+    if (t.classList.contains('lvbtn')) { sfx.tap(); return startLevel(t.dataset.id); }
+    if (t.id === 'back') { sfx.tap(); return renderHome(); }
+    if (G.busy) return;
+    if (t.id === 'go') return go();
+    if (t.id === 'reset') { sfx.remove(); const m = G.meta; if (m.mode === 'A') { G.st.sup = {}; G.st.top = {}; G.st.tie = null; } else { G.st.tie = 0; G.st.anchor = 0; G.st.stab = false; G.st.ballast = 0; } G.anim = null; return renderAll(); }
+    if (t.id === 'hintBtn') { sfx.tap(); return openSheet(`<div class="sheet"><h3>求救</h3><p>我會往最省的做法幫你走一步。用了之後，這一關最多拿兩星。</p><div class="btns"><button class="ghost" data-act="close">不用了</button><button class="primary" data-act="hint">走一步</button></div></div>`); }
+    if (t.dataset.step) { const [k, d] = t.dataset.step.split(':'); G.anim = null; return stepB(k, +d); }
+    if (t.dataset.form) { G.st.form = t.dataset.form; G.st.p = defP(G.lv, G.st.form); G.anim = null; sfx.tap(); return renderAll(); }
+    if (t.dataset.kind === 'tie') { G.st.tie = G.st.tie === t.dataset.key ? null : t.dataset.key; G.anim = null; sfx.place(); return renderAll(); }
+    const act = t.dataset.act;
+    if (act === 'retry' || act === 'close') { G.anim = null; closeSheet(); return renderAll(); }
+    if (act === 'hint') { G.anim = null; const msg = hintStep(); closeSheet(); renderAll(); return toast(msg); }
+    if (act === 'skip') { save.skip[G.meta.lv.id] = 1; persist(); return startLevel(ORDER[G.meta.mode][G.meta.i + 1]); }
+    if (act === 'home') return renderHome();
+    if (act === 'again') return startLevel(G.meta.lv.id);
+    if (act === 'next') return startLevel(ORDER[G.meta.mode][G.meta.i + 1]);
+  }
+  document.addEventListener('pointerdown', ev => {
+    if ($('#level').hidden || G.busy || G.meta.mode !== 'A') return;
+    const card = ev.target.closest('.card');
+    if (card && !card.classList.contains('tog')) {
+      if (card.classList.contains('out')) return toast('這種零件用完了。');
+      ev.preventDefault(); G.anim = null; closeSheet();
+      return startDrag(card.dataset.kind, card.dataset.key, null, ev);
+    }
+    if (ev.target.id === 'hit') hitDown(ev);
+  });
+  window.addEventListener('pointermove', moveDrag, { passive: true });
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
+
+  G.api = { startLevel, go, renderAll, META, ORDER, save, starsFor };
+  renderHome();
+})();
+
+</script>
+</body>
+</html>
